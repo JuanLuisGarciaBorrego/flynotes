@@ -1,0 +1,8 @@
+twig:
+    file_name_pattern: '*.twig'
+    globals:
+        umami_website_id: '%env(UMAMI_WEBSITE_ID)%'
+
+when@test:
+    twig:
+        strict_variables: true

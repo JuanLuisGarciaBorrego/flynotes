@@ -1,0 +1,349 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Instrument Sans", system-ui, sans-serif;
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-stamp: "Pacifico", cursive;
+    --font-label: "JetBrains Mono", ui-monospace, monospace;
+
+    --color-sky-bg: #E6EDF4;
+    --color-paper: #FFFFFF;
+    --color-ink: #14213D;
+    --color-ink-soft: #33415C;
+    --color-ink-muted: #4A5872;
+    --color-line: #C9D5E2;
+    --color-line-soft: #D5DFEA;
+    --color-accent: #C2410C;
+    --color-accent-dark: #9A3412;
+    --color-accent-tint: #FDF0E9;
+    --color-airmail-blue: #2F5DA8;
+    --color-pulse: #7C3AED;
+    --color-pulse-dark: #5B21B6;
+    --color-pulse-tint: #F3EEFE;
+    --color-report: #FACC15;
+    --color-report-tint: #FEF08A;
+
+    --shadow-paper: 0 24px 48px -28px rgb(20 33 61 / .45);
+}
+
+/* Air-mail stripe: 6px band at the very top and 5px on top of the main card. */
+.airmail {
+    background-image: repeating-linear-gradient(135deg, #C2410C 0 16px, #fff 16px 24px, #2F5DA8 24px 40px, #fff 40px 48px);
+}
+
+.airmail-paper {
+    background-image: repeating-linear-gradient(135deg, #C2410C 0 12px, #fff 12px 18px, #2F5DA8 18px 30px, #fff 30px 36px);
+}
+
+.btn { transition: transform .15s ease, background-color .15s ease, color .15s ease; }
+.btn:hover { transform: translateY(-1px); }
+
+/* Home sky: every plane flies its own closed loop (offset-path is set inline by home.js). */
+@keyframes roam {
+    from { offset-distance: 0%; }
+    to { offset-distance: 100%; }
+}
+.plane {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    outline-offset: 4px;
+    offset-rotate: auto;
+    offset-anchor: 80% 50%;
+    animation-name: roam;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+.plane svg { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+.plane:hover svg,
+.plane:focus-visible svg { transform: scale(1.12) translateY(-4px); }
+/* Highlight: wing turns accent orange (like the logo), plane comes fully opaque and to the front. */
+.plane .plane-wing { transition: fill .2s ease; }
+.plane:hover,
+.plane:focus-visible { opacity: 1 !important; z-index: 11 !important; }
+.plane:hover .plane-wing,
+.plane:focus-visible .plane-wing { fill: #C2410C; }
+.plane:hover svg,
+.plane:focus-visible svg { filter: drop-shadow(0 6px 10px rgb(194 65 12 / .35)); }
+.plane:focus-visible { outline: 2px solid #C2410C; }
+
+/* Modal loader: a small plane flies a figure-eight (same `roam` keyframes as the sky). */
+.loader-plane {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    offset-path: path('M35 35 C35 8, 65 8, 80 35 S125 62, 125 35 S95 8, 80 35 S35 62, 35 35 Z');
+    offset-rotate: auto;
+    offset-anchor: 80% 50%;
+    animation: roam 2.6s linear infinite;
+}
+.loading-dots::after {
+    content: '';
+    display: inline-block;
+    width: 1.2em;
+    text-align: left;
+    animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75%, 100% { content: '...'; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loader-plane { animation: none; offset-distance: 25%; }
+    .loading-dots::after { animation: none; content: '...'; }
+    .plane { animation: none; }
+    :root { --modal-fade: 0ms; }
+    .btn { transition: none; }
+}
+
+/* Plain links keep the ink colour and turn accent on hover. */
+@layer base {
+    a { color: var(--color-ink); }
+    a:hover { color: var(--color-accent); }
+}
+
+/* ---- Open plane (modal) ---------------------------------------------------------------- */
+@keyframes unfold {
+    0% { transform: translateY(24px) scale(.6) rotate(-8deg); opacity: 0; }
+    70% { transform: translateY(-4px) scale(1.01) rotate(.5deg); opacity: 1; }
+    100% { transform: none; opacity: 1; }
+}
+@keyframes sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: none; }
+}
+@keyframes stamp-in {
+    0% { transform: scale(1.9); opacity: 0; }
+    55% { transform: scale(.9); opacity: 1; }
+    75% { transform: scale(1.04); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.plane-dialog[open] { animation: unfold .5s cubic-bezier(.2, .8, .2, 1) both; }
+.plane-dialog::backdrop {
+    background: rgb(20 33 61 / .5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+.plane-body:not(.hidden) { display: flex; }
+[data-stamp-state]:not(.hidden) { display: flex; }
+
+@media (max-width: 639px) {
+    .plane-dialog[open] {
+        display: flex;
+        flex-direction: column;
+        animation: sheet-in .4s cubic-bezier(.2, .8, .2, 1) both;
+    }
+    .plane-body:not(.hidden) { display: block; }
+}
+
+.stamp-in { animation: stamp-in .55s cubic-bezier(.2, .8, .2, 1) both; }
+
+/* The stamp: a round sticker with a peeled corner (see assets/js/stamp.js). Size comes from --stamp-size. */
+.stamp {
+    position: relative;
+    display: block;
+    flex: none;
+    width: var(--stamp-size, 100%);
+    aspect-ratio: 1;
+    container-type: size;
+    font-family: var(--font-stamp);
+    color: #fff;
+}
+.stamp > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* The flag sits on the fold, turned 45deg to follow it. Emoji, so it scales with the stamp. */
+.stamp-flag {
+    position: absolute;
+    left: 22.5%;
+    top: 59.5%;
+    width: 23%;
+    height: 14%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 15cqw;
+    line-height: 1;
+    transform: rotate(45deg);
+}
+.stamp-preview { --stamp-size: 56px; }
+@media (min-width: 640px) {
+    .stamp-preview { --stamp-size: 150px; }
+    .stamp-preview.flex { align-items: center; }
+}
+
+/* Passport area: stamps are absolutely placed (see assets/js/plane-stamps.js). */
+.passport-stamp { position: absolute; }
+.passport-ghost {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px dashed #8FA3BA;
+    border-radius: 999px;
+    background: rgb(238 243 248 / .9);
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .plane-dialog[open], .stamp-in { animation: none; }
+}
+
+/* The sheet of /planes/new and its launch: it folds into a plane that flies away (assets/js/paper-plane.js). */
+.launch-sheet {
+    box-shadow: 0 28px 56px -34px rgb(20 33 61 / .55);
+    transition: transform .45s ease, opacity .45s ease, border-color .15s ease;
+}
+.launch-sheet:focus-within { border-color: var(--color-airmail-blue); }
+.launch-sheet:has([aria-invalid="true"]) { border-color: #B91C1C; }
+.launch-lines {
+    background: repeating-linear-gradient(to bottom, transparent 0 41px, #E4EAF1 41px 42px) local;
+}
+.launch-counter { color: var(--color-ink-muted); }
+.launch-counter[data-level="low"] { color: var(--color-accent); }
+.launch-counter[data-level="out"] { color: #B91C1C; }
+.launch-plane {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 40;
+    width: 140px;
+    margin: -52px 0 0 -70px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+[data-launch] .launch-sheet { transform: scale(.32) rotate(-10deg); opacity: 0; }
+[data-launch="folding"] .launch-plane { opacity: 1; visibility: visible; transition: opacity .45s ease; }
+[data-launch="flying"] .launch-plane {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(70vw, -80vh) rotate(-14deg) scale(.4);
+    transition: transform 1s ease-in;
+}
+@media (prefers-reduced-motion: reduce) {
+    .launch-sheet, .launch-plane { transition: none; }
+}
+
+/* AI review dialog after launching (templates/paper_plane/new.html.twig). */
+.ai-dialog[open] { animation: unfold .5s cubic-bezier(.2, .8, .2, 1) both; }
+[data-ai-view]:not(.hidden) { display: flex; }
+@media (prefers-reduced-motion: reduce) {
+    .ai-dialog[open] { animation: none; }
+}
+
+/* Generation in progress: skeleton bars breathe softly (static with reduced motion). Disabled buttons do not lift. */
+@keyframes ai-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.ai-skeleton { animation: ai-skeleton 1.4s ease-in-out infinite; }
+.btn:disabled:hover { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+    .ai-skeleton { animation: none; }
+}
+
+/* ---- Sky Pulse: violet is the AI's work, the orange air-mail stripe and accent are the human's decision -------- */
+/* The violet plane of the home sky: stays violet on hover, where the other planes turn orange. */
+.plane-pulse .plane-wing,
+.plane-pulse:hover .plane-wing,
+.plane-pulse:focus-visible .plane-wing { fill: var(--color-pulse); }
+.plane-pulse:focus-visible { outline-color: var(--color-pulse); }
+.plane-pulse:hover svg,
+.plane-pulse:focus-visible svg { filter: drop-shadow(0 6px 10px rgb(124 58 237 / .4)); }
+
+/* Reports published by Sky Pulse are yellow, in the sky and when opened. Violet stays for the agent itself. */
+.plane.plane-report .plane-wing,
+.plane.plane-report:hover .plane-wing,
+.plane.plane-report:focus-visible .plane-wing { fill: var(--color-report); }
+.plane.plane-report .plane-fold { fill: var(--color-report-tint); }
+.plane.plane-report:focus-visible { outline-color: #A16207; }
+.plane.plane-report:hover svg,
+.plane.plane-report:focus-visible svg { filter: drop-shadow(0 6px 10px rgb(202 138 4 / .45)); }
+.plane-body.plane-report .airmail-paper {
+    background-image: repeating-linear-gradient(135deg, #FACC15 0 12px, #fff 12px 18px, #CA8A04 18px 30px, #fff 30px 36px);
+}
+.plane-body.plane-report #plane-author-avatar { background: var(--color-report-tint); }
+
+/* Status of the mission, in the header. */
+.pulse-pill { background: var(--color-pulse-tint); color: var(--color-pulse-dark); --dot: var(--color-pulse); }
+.pulse-pill[data-tone="waiting"] { background: var(--color-accent-tint); color: var(--color-accent-dark); --dot: var(--color-accent); }
+.pulse-pill[data-tone="completed"] { background: #DCFCE7; color: #166534; --dot: #16A34A; }
+.pulse-pill[data-tone="rejected"] { background: #F1F5F9; color: #334155; --dot: #64748B; }
+.pulse-pill[data-tone="failed"] { background: #FFF1F2; color: #9F1239; --dot: #BE123C; }
+.pulse-pill-dot { background: var(--dot); }
+
+/* Progress: a bar per step, in the colour of whoever is responsible for it. */
+.pulse-flight:not([hidden]) { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pulse-flight li { --actor: var(--color-pulse); --actor-text: #6D28D9; color: #64748B; }
+.pulse-flight li[data-actor="human"] { --actor: var(--color-accent); --actor-text: var(--color-accent); }
+.pulse-flight li[data-actor="plane"] { --actor: #16A34A; --actor-text: #166534; }
+.pulse-flight-bar { background: #E2E8F0; }
+.pulse-flight li:is([data-state="done"], [data-state="current"]) .pulse-flight-bar { background: var(--actor); }
+.pulse-flight li:is([data-state="done"], [data-state="current"], [data-state="stopped"]) { color: var(--color-ink); }
+.pulse-flight li:is([data-state="done"], [data-state="current"]) .pulse-flight-tag { color: var(--actor-text); }
+.pulse-flight li[data-state="stopped"] .pulse-flight-bar { background: #94A3B8; }
+.pulse-flight li[aria-current="step"] .pulse-flight-text { font-weight: 700; }
+/* On a phone every step shows only who does it, and the current one what it is. Screen readers still get them all. */
+@media (max-width: 639px) {
+    .pulse-flight:not([hidden]) { display: flex; }
+    .pulse-flight li { flex: 1 1 auto; }
+    .pulse-flight li[aria-current="step"] { flex: 0 0 auto; }
+    .pulse-flight li:not([aria-current="step"]) .pulse-flight-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
+/* The evidence of the proposal. */
+.pulse-evidence summary::-webkit-details-marker { display: none; }
+
+/* The human's decision stays at hand on a phone while it is pending. A visitor has nothing to decide: it would only cover the text. */
+@media (max-width: 639px) {
+    .pulse-decision:has([data-decision]) { position: sticky; bottom: 0; z-index: 10; }
+}
+
+/* How the mission ended, or what it is doing: at the foot of the card, where the decision was. */
+.pulse-outcome { background: var(--color-pulse-tint); border-color: #E4DCFB; }
+.pulse-outcome-title { color: var(--color-pulse-dark); }
+.pulse-outcome[data-tone="completed"] { background: #F0FDF4; border-color: #BBF7D0; }
+.pulse-outcome[data-tone="completed"] .pulse-outcome-title { color: #166534; }
+.pulse-outcome[data-tone="rejected"] { background: #F8FAFC; border-color: #E2E8F0; }
+.pulse-outcome[data-tone="rejected"] .pulse-outcome-title { color: #334155; }
+.pulse-outcome[data-tone="failed"] { background: #FFF1F2; border-color: #FECDD3; }
+.pulse-outcome[data-tone="failed"] .pulse-outcome-title { color: #9F1239; }
+
+/* Timeline: a dot in the colour of whoever acted. */
+.pulse-dot {
+    display: block;
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--color-pulse);
+}
+.pulse-dot[data-actor="human"] { background: var(--color-accent); }
+.pulse-dot[data-actor="plane"] { background: #16A34A; }
+.pulse-dot[data-actor="failed"] { background: #BE123C; }
+@keyframes pulse-live { 0% { box-shadow: 0 0 0 0 rgb(124 58 237 / .5); } 100% { box-shadow: 0 0 0 7px rgb(124 58 237 / 0); } }
+.pulse-dot-live { animation: pulse-live 1.4s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pulse-dot-live { animation: none; }
+}

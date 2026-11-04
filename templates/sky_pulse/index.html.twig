@@ -1,0 +1,179 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sky Pulse · FlyNotes{% endblock %}
+
+{% block description %}Sky Pulse is the research agent of FlyNotes: the AI investigates and proposes, but humans decide what runs and what gets published.{% endblock %}
+
+{# For the technical labels: checkpoints, tool names, results and times. #}
+{% block stylesheets %}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">{% endblock %}
+
+{# overflow:hidden would make the shell the scroll box of the sticky decision strip, which then never sticks. #}
+{% block shell_overflow %}overflow-clip{% endblock %}
+
+{% block main_class %}relative z-10 mx-auto w-full max-w-[1140px] grow px-3 pb-8 pt-1 sm:px-[clamp(12px,3vw,32px)] sm:pb-14 sm:pt-2{% endblock %}
+
+{# Who decides: the buttons for a registered human, an invitation for anyone else. The API still enforces it. #}
+{% macro human_actions(decision, accept_label) %}
+    {% if current_participant() %}
+        <div class="flex flex-wrap gap-2.5 max-sm:w-full">
+            <button type="button" data-decision="{{ decision }}" data-accepted="false" class="btn flex min-h-[46px] cursor-pointer items-center justify-center rounded-full border-[1.5px] border-ink bg-white px-[18px] text-[15px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 max-sm:grow">Reject</button>
+            <button type="button" data-decision="{{ decision }}" data-accepted="true" class="btn flex min-h-[46px] cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-accent px-5 text-[15px] font-semibold text-white hover:bg-accent-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 max-sm:grow-[2]">
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+                <span>{{ accept_label }}</span>
+            </button>
+        </div>
+    {% else %}
+        <p class="m-0 max-w-[34ch] text-sm leading-normal text-ink-soft">Only registered human participants can decide. <a href="{{ path('app_registration') }}" class="font-semibold underline">Sign up</a> or <a href="{{ path('app_recover') }}" class="font-semibold underline">use your code</a>.</p>
+    {% endif %}
+{% endmacro %}
+
+{# The human's turn, at the foot of the card that is being decided on. Sticks to the bottom of the screen on a phone. #}
+{% macro decision_strip(id, decision, title, text, accept_label) %}
+    <section id="{{ id }}" hidden aria-labelledby="{{ id }}-title" class="pulse-decision flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t border-[#F3D3C2] bg-[#FFF7F2] px-4 py-4 sm:px-[clamp(16px,2.5vw,26px)]">
+        <div class="flex flex-col gap-0.5">
+            <p class="m-0 text-xs font-bold uppercase tracking-[0.1em] text-accent">Your decision</p>
+            <h3 id="{{ id }}-title" class="m-0 text-base font-semibold">{{ title }}</h3>
+            <p class="m-0 text-[13px] text-ink-muted">{{ text }}</p>
+        </div>
+        {{ _self.human_actions(decision, accept_label) }}
+    </section>
+{% endmacro %}
+
+{% block body %}
+{% set flight = [
+    {tag: 'AI', label: 'chooses', actor: 'ai'},
+    {tag: 'HUMAN', label: 'approves', actor: 'human'},
+    {tag: 'AI', label: 'researches', actor: 'ai'},
+    {tag: 'AI', label: 'proposes', actor: 'ai'},
+    {tag: 'HUMAN', label: 'publishes', actor: 'human'},
+    {tag: '', label: 'Plane in the sky', actor: 'plane'},
+] %}
+{% set card = 'rounded-[10px] border border-line-soft bg-white' %}
+
+{# The shell only: every state comes from the API and is painted by assets/js/sky-pulse.js. #}
+<div id="sky-pulse" class="flex flex-col gap-4">
+    <a href="{{ path('app_home') }}" class="flex min-h-11 items-center self-start text-[15px] font-semibold text-ink no-underline hover:text-ink hover:underline">← Back to the sky</a>
+
+    <header class="{{ card }} flex flex-col gap-[18px] px-4 py-[18px] sm:px-[clamp(16px,2.5vw,24px)]">
+        <div class="flex flex-wrap items-center justify-between gap-3.5">
+            <div class="flex items-center gap-3.5">
+                <span aria-hidden="true" class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-pulse-tint text-[#6D28D9]">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                </span>
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6D28D9]">The FlyNotes research agent</p>
+                    <h1 class="m-0 font-display text-[26px] font-extrabold leading-[1.05] tracking-[-0.02em]">Sky Pulse</h1>
+                    <p class="m-0 text-sm text-ink-soft">Explores the community's aggregated data and writes a paper plane about it. <strong class="font-semibold text-ink">AI researches, humans decide.</strong></p>
+                </div>
+            </div>
+            <div id="sp-summary" hidden class="flex flex-col gap-1 sm:items-end">
+                <p id="sp-status" role="status" class="pulse-pill m-0 flex items-center gap-2 self-start rounded-full px-3.5 py-1.5 text-sm font-semibold sm:self-end">
+                    <span aria-hidden="true" class="pulse-pill-dot size-2 shrink-0 rounded-full"></span>
+                    <span id="sp-status-label"></span>
+                </p>
+                <p id="sp-metrics" class="m-0 font-label text-xs font-medium text-ink-muted"></p>
+            </div>
+        </div>
+
+        <ol id="sp-flight" hidden aria-label="Mission progress" class="pulse-flight m-0 list-none gap-1.5 p-0">
+            {% for phase in flight %}
+                <li data-actor="{{ phase.actor }}" data-state="todo" class="flex min-w-0 flex-col gap-1.5">
+                    <span aria-hidden="true" class="pulse-flight-bar block h-1.5 rounded-full"></span>
+                    <span class="pulse-flight-text flex items-baseline gap-[5px] overflow-hidden text-xs font-medium whitespace-nowrap">
+                        {% if phase.tag %}<span class="pulse-flight-tag shrink-0 text-[10px] font-bold tracking-[0.06em]">{{ phase.tag }}</span>{% endif %}
+                        <span class="pulse-flight-label truncate">{{ phase.label }}</span>
+                    </span>
+                </li>
+            {% endfor %}
+        </ol>
+    </header>
+
+    <div id="sp-notice" hidden class="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-rose-300 bg-rose-50 px-4 py-3" role="alert">
+        <p id="sp-notice-text" class="m-0 text-[15px] text-rose-900"></p>
+        <button id="sp-retry" type="button" hidden class="btn min-h-11 cursor-pointer rounded-full border-[1.5px] border-ink bg-white px-4 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60">Try again</button>
+    </div>
+
+    <div id="sp-working" class="flex items-center justify-center gap-3 rounded-[10px] border border-line-soft bg-white/80 px-4 py-3" role="status" aria-live="polite">
+        <svg class="size-5 shrink-0 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#7C3AED" stroke-opacity=".25" stroke-width="3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/></svg>
+        <p id="sp-working-text" class="loading-dots m-0 text-sm font-medium text-ink-soft">Looking for the current mission</p>
+    </div>
+
+    <section id="sp-intro" hidden aria-labelledby="sp-intro-title" class="{{ card }} overflow-hidden">
+        <div class="airmail-paper h-[5px]" aria-hidden="true"></div>
+        <div class="flex flex-col gap-5 p-5 sm:p-8">
+            <h2 id="sp-intro-title" class="m-0 font-display text-2xl font-bold sm:text-[28px]">How does a mission work?</h2>
+            <ol class="m-0 grid list-none gap-4 p-0 sm:grid-cols-3">
+                <li class="flex flex-col gap-1"><span class="font-display font-bold text-[#6D28D9]">1. AI chooses</span><span class="text-[15px] leading-normal text-ink-soft">Sky Pulse decides what it wants to look up, but doesn't run it.</span></li>
+                <li class="flex flex-col gap-1"><span class="font-display font-bold text-accent">2. A human approves</span><span class="text-[15px] leading-normal text-ink-soft">Only with your approval does it research and write a proposal.</span></li>
+                <li class="flex flex-col gap-1"><span class="font-display font-bold text-accent">3. A human publishes</span><span class="text-[15px] leading-normal text-ink-soft">No paper plane takes off without your approval.</span></li>
+            </ol>
+            {% if current_participant() %}
+                <button id="sp-start" type="button" class="btn flex min-h-[52px] cursor-pointer items-center justify-center gap-2.5 self-stretch rounded-full border-0 bg-pulse px-7 text-[17px] font-semibold text-white hover:bg-pulse-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pulse disabled:cursor-not-allowed disabled:opacity-60 sm:self-start">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+                    Start mission
+                </button>
+            {% else %}
+                <p id="sp-anonymous" class="m-0 rounded-md bg-sky-bg px-4 py-3 text-[15px] leading-normal text-ink-soft">You can watch missions, but only registered human participants can start them and decide. <a href="{{ path('app_registration') }}" class="font-semibold underline">Sign up</a> or <a href="{{ path('app_recover') }}" class="font-semibold underline">use your code</a>.</p>
+            {% endif %}
+            <a id="sp-last" hidden href="{{ path('app_sky_pulse') }}" class="min-h-11 self-start text-[15px] font-semibold underline"></a>
+        </div>
+    </section>
+
+    <div id="sp-mission" hidden class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-start gap-4">
+            <article aria-labelledby="sp-proposal-title" class="{{ card }} min-w-0 flex-[999_1_540px] overflow-clip shadow-[0_24px_48px_-34px_rgb(20_33_61/.5)]">
+                <div class="airmail-paper h-[5px]" aria-hidden="true"></div>
+                <div class="flex flex-col gap-3.5 px-4 py-5 sm:px-[clamp(16px,2.5vw,26px)]">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="m-0 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-[#6D28D9]"><span class="rounded-md bg-pulse-tint px-2 py-0.5">AI</span> <span id="sp-card-label"></span></p>
+                        <span id="sp-proposal-state" class="text-[13px] text-ink-muted"></span>
+                    </div>
+                    <h2 id="sp-proposal-title" class="m-0 break-words font-display text-[clamp(22px,2.6vw,28px)] font-bold leading-[1.15] tracking-[-0.02em]"></h2>
+                    <p id="sp-proposal-message" class="m-0 whitespace-pre-line break-words text-[17px] leading-[1.55] text-[#1F2A44]"></p>
+                    <code id="sp-tool-code" hidden class="self-start break-all font-label text-xs font-medium text-ink-muted"></code>
+
+                    <details id="sp-evidence" hidden class="pulse-evidence rounded-lg border border-[#E4DCFB] bg-[#F7F5FE]">
+                        <summary class="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 rounded-lg px-3.5 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pulse">
+                            <span class="font-semibold text-pulse-dark">Evidence</span>
+                            <code id="sp-evidence-tool" class="break-all font-label text-xs font-medium text-ink-muted"></code>
+                            <span id="sp-evidence-chips" class="flex flex-wrap gap-1.5"></span>
+                            <span class="ml-auto text-[13px] font-semibold text-pulse-dark">Details</span>
+                        </summary>
+                        <div class="flex flex-col gap-2 px-3.5 pb-3.5 text-sm text-ink-soft">
+                            <p class="m-0"><strong class="font-semibold text-ink">Task:</strong> <span id="sp-evidence-task"></span></p>
+                            <pre id="sp-evidence-result" class="m-0 max-h-72 overflow-auto rounded-md border border-[#E4DCFB] bg-white px-3 py-2.5 font-label text-xs font-medium leading-normal text-ink"></pre>
+                            <p id="sp-evidence-note" class="m-0 text-[13px] text-ink-muted"></p>
+                        </div>
+                    </details>
+                </div>
+
+                {{ _self.decision_strip('sp-tool-decision', 'tool', 'Do you approve this research?', 'Nothing has run yet: the tool will only run if you approve it.', 'Approve research') }}
+                {{ _self.decision_strip('sp-publish-decision', 'publication', 'Shall we publish this plane?', 'It will only take off if you approve it.', 'Publish plane') }}
+
+                <div id="sp-outcome" hidden role="status" class="pulse-outcome flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t px-4 py-4 sm:px-[clamp(16px,2.5vw,26px)]">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                        <strong id="sp-outcome-title" class="pulse-outcome-title text-base font-semibold"></strong>
+                        <span id="sp-outcome-text" class="text-sm text-ink-soft"></span>
+                    </div>
+                    <a id="sp-published-link" hidden href="{{ path('app_home') }}" class="btn flex min-h-[46px] items-center justify-center rounded-full border-[1.5px] border-ink bg-white px-[18px] text-[15px] font-semibold text-ink no-underline hover:text-ink max-sm:w-full">See the published plane</a>
+                </div>
+            </article>
+
+            <aside aria-labelledby="sp-timeline-title" class="{{ card }} flex min-w-0 flex-[1_1_290px] flex-col gap-3 px-[18px] pb-3 pt-[18px]">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 id="sp-timeline-title" class="m-0 font-display text-lg font-bold">Timeline</h2>
+                    <p class="m-0 flex gap-2.5 text-xs text-ink-muted">
+                        <span class="flex items-center gap-1"><span class="pulse-dot" data-actor="ai" aria-hidden="true"></span>AI</span>
+                        <span class="flex items-center gap-1"><span class="pulse-dot" data-actor="human" aria-hidden="true"></span>Human</span>
+                    </p>
+                </div>
+                <ol id="sp-timeline" class="m-0 flex list-none flex-col p-0"></ol>
+                <button id="sp-timeline-toggle" type="button" hidden class="min-h-11 cursor-pointer self-start rounded border-0 bg-transparent px-0.5 text-sm font-semibold text-airmail-blue hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-airmail-blue"></button>
+                <p id="sp-mission-meta" class="m-0 text-xs text-ink-muted"></p>
+            </aside>
+        </div>
+
+        <a id="sp-back" hidden href="{{ path('app_sky_pulse') }}" class="btn flex min-h-12 items-center justify-center self-stretch rounded-full border-[1.5px] border-ink bg-white px-6 text-base font-semibold text-ink no-underline hover:text-ink sm:self-start">Back to Sky Pulse</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create your identity · FlyNotes{% endblock %}
+
+{% block body %}
+{% set plane %}<svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3Z"/><path d="m10 13 11-10"/></svg>{% endset %}
+<div id="registration" class="mx-auto -mt-4 w-full max-w-md sm:mt-0">
+    <div class="rounded-3xl border border-amber-100 bg-gradient-to-b from-white to-amber-50/60 p-6 shadow-sm sm:p-8">
+        <header id="registration-header" class="text-center">
+            <p class="inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-sky-700">
+                {{ plane|raw }} FlyNotes
+            </p>
+            <h1 class="mt-4 text-3xl font-bold tracking-tight">Create your identity</h1>
+            <p class="mt-2 text-stone-600">Pick a nickname and start sending messages around the world.</p>
+        </header>
+
+        <form id="registration-form" class="mt-8 space-y-5" novalidate>
+            <p id="form-error" class="hidden rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert"></p>
+
+            <div>
+                <label for="name" class="block text-sm font-medium text-stone-700">Nickname</label>
+                <input id="name" name="name" type="text" required maxlength="255" autocomplete="nickname"
+                       aria-describedby="name-error"
+                       class="mt-1 block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 aria-[invalid=true]:border-rose-500">
+                <p id="name-error" class="mt-1 hidden text-sm text-rose-700"></p>
+            </div>
+
+            <div>
+                <label for="countryCode" class="block text-sm font-medium text-stone-700">Country</label>
+                <select id="countryCode" name="countryCode" required aria-describedby="countryCode-error"
+                        class="mt-1 block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 aria-[invalid=true]:border-rose-500">
+                    <option value="" selected disabled>Select your country</option>
+                    {% for country in countries %}
+                        <option value="{{ country.code }}" data-name="{{ country.name }}" data-flag="{{ country.flag }}">{{ country.flag }} {{ country.name }}</option>
+                    {% endfor %}
+                </select>
+                <p id="countryCode-error" class="mt-1 hidden text-sm text-rose-700"></p>
+            </div>
+
+            <p class="text-sm text-stone-500">🎲 We'll pick a random emoji for you.</p>
+
+            <button id="submit" type="submit"
+                    class="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-3 font-medium text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-sky-400">
+                <svg id="spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <span id="submit-label">Create my identity</span>
+            </button>
+        </form>
+
+        <section id="registration-done" class="mt-2 hidden text-center" aria-live="polite">
+            <p id="done-emoji" class="text-6xl" aria-hidden="true"></p>
+            <h2 class="mt-4 text-2xl font-bold tracking-tight">Your identity is ready!</h2>
+            <p class="mt-2 text-lg"><span id="done-name" class="font-semibold"></span></p>
+            <p id="done-country" class="text-stone-600"></p>
+
+            <p class="mt-6 text-sm font-medium text-stone-700">Your personal code</p>
+            <p id="done-code" class="mt-1 select-all break-all rounded-2xl border border-dashed border-amber-300 bg-white px-4 py-4 font-mono text-xl font-semibold tracking-widest text-stone-900 sm:text-2xl"></p>
+
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                <button id="copy" type="button" class="flex-1 rounded-full border border-sky-600 px-5 py-3 font-medium text-sky-700 transition hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">Copy code</button>
+                <button id="download" type="button" class="flex-1 rounded-full border border-sky-600 px-5 py-3 font-medium text-sky-700 transition hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">Download code</button>
+            </div>
+            <p id="copy-status" class="mt-2 min-h-5 text-sm text-stone-600" role="status"></p>
+
+            <div class="mt-4 rounded-2xl bg-amber-50 p-4 text-left text-sm text-amber-900">
+                <p class="font-semibold">Save this code now</p>
+                <p class="mt-1">It's the only way to recover your identity from another browser or device. Anyone who has it can pretend to be you, so keep it to yourself. If you leave this screen without saving it, we can't promise you'll see it again.</p>
+                <p class="mt-2">The downloaded file holds a private credential: keep it somewhere safe.</p>
+            </div>
+
+            <div class="mt-8 border-t border-amber-100 pt-6">
+                {% if return_plane %}
+                    <a href="{{ path('app_home', {plane: return_plane}) }}" class="mb-6 flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-4 text-lg font-bold text-white shadow-md transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-300 focus:ring-offset-2">
+                        Back to the plane to add my stamp
+                    </a>
+                {% endif %}
+                <p class="text-lg font-semibold">You're ready to fly ✈️</p>
+                <p class="mt-1 text-sm text-stone-600">Write your first message and let it travel to someone anywhere in the world.</p>
+                <a href="{{ path('app_paper_plane_new') }}" class="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-4 text-lg font-bold text-white shadow-md transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-300 focus:ring-offset-2">
+                    Write your first message
+                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </a>
+                <p class="mt-2 text-xs text-stone-500">Saved your code? Then you're good to go.</p>
+            </div>
+        </section>
+    </div>
+
+    <p id="recovery-link" class="mt-6 text-center text-sm text-stone-500">
+        Already have a code?
+        <a href="{{ path('app_recover', return_plane ? {plane: return_plane} : {}) }}" class="font-medium text-sky-700 underline hover:text-sky-800">Recover your identity</a>
+    </p>
+</div>
+{% endblock %}

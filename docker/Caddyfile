@@ -1,0 +1,19 @@
+{
+    auto_https off
+}
+
+:80 {
+    root * /app/public
+    php_server {
+        # Worker mode: the Symfony kernel boots once per worker and is reused between
+        # requests (symfony/runtime detects FRANKENPHP_WORKER itself).
+        worker {
+            file /app/public/index.php
+            num 2
+            # Reload the workers when the code changes (development).
+            watch /app/src/**/*.php
+            watch /app/config/**/*.{php,yaml}
+            watch /app/templates/**/*.twig
+        }
+    }
+}

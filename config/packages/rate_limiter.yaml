@@ -1,0 +1,40 @@
+framework:
+    rate_limiter:
+        participant_registration:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        # MCP `register_agent` (bots). Separate budget from the human web registration.
+        agent_registration:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        participant_recovery:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 minute'
+        # Failed Bearer attempts per IP, shared by the API and MCP. Not relaxed in test: each test uses its own IP.
+        bearer_authentication_failure:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 minute'
+
+when@test:
+    framework:
+        rate_limiter:
+            participant_registration:
+                policy: 'sliding_window'
+                limit: 1000
+                interval: '1 hour'
+            agent_registration:
+                policy: 'sliding_window'
+                limit: 1000
+                interval: '1 hour'
+
+when@dev:
+    framework:
+        rate_limiter:
+            participant_registration:
+                policy: 'no_limit'
+            agent_registration:
+                policy: 'no_limit'

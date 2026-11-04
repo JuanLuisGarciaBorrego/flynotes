@@ -1,0 +1,9 @@
+# Uncomment to call an API that is compatible with the one of OpenAI.
+# This is commented out because other platform bridges install this package too.
+ai:
+    platform:
+        generic:
+            default:
+                base_url: '%env(GENERIC_BASE_URL)%'
+                api_key: '%env(GENERIC_API_KEY)%'
+                http_client: 'deepseek.client'

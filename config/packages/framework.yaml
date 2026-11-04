@@ -1,0 +1,37 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    default_locale: en
+
+    # Note that the session will be started ONLY if you read or write from it.
+    session:
+        name: flynotes_session
+        cookie_secure: auto
+        cookie_httponly: true
+        # Lax keeps the session on top-level navigations; CSRF on writes is handled separately.
+        cookie_samesite: lax
+        # Persistent session (survives closing the browser): 30 days.
+        cookie_lifetime: 2592000
+        gc_maxlifetime: 2592000
+
+    # Stateless (Origin/Sec-Fetch-Site + custom header) CSRF protection for the JSON API.
+    csrf_protection:
+        stateless_token_ids: ['api']
+        check_header: true
+
+    # HTTP client for DeepSeek. Calls are paid, so a failure is never retried automatically.
+    # `timeout` only limits the time without data; `max_duration` limits the whole request.
+    http_client:
+        scoped_clients:
+            deepseek.client:
+                base_uri: '%env(GENERIC_BASE_URL)%'
+                timeout: 15
+                max_duration: 20
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

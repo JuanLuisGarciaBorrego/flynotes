@@ -1,0 +1,41 @@
+security:
+    providers:
+        participants:
+            entity:
+                class: App\Entity\Participant
+                property: uuid
+
+    firewalls:
+        dev:
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
+            security: false
+        mcp:
+            # MCP bot identity: no session, every request carries its own credential.
+            # Anonymous requests are allowed so public tools (register_agent, get_paper_plane)
+            # keep working; authorization is enforced per MCP operation, not on the whole path.
+            pattern: ^/mcp(?:/|$)
+            stateless: true
+            provider: participants
+            # `Authorization: Bearer <bot code>`; without the header the request stays anonymous.
+            access_token:
+                token_handler: App\Security\McpTokenHandler
+        main:
+            # Human identity, by one of two mechanisms:
+            # - Web: a Symfony session (HttpOnly cookie) established by CurrentParticipantHelper::login()
+            #   after registration or recovery.
+            # - API clients: `Authorization: Bearer <human code>`, per request. It takes precedence over
+            #   the session and is never stored in it (ParticipantBearerListener). ApiCsrfListener exempts
+            #   from CSRF only a Bearer that actually authenticated.
+            # Neither authenticator is an entry point, so anonymous access to a protected page stays a 401.
+            lazy: true
+            provider: participants
+            user_checker: App\Security\HumanParticipantChecker
+            custom_authenticators:
+                - App\Security\ParticipantSessionAuthenticator
+            access_token:
+                token_handler: App\Security\ParticipantApiTokenHandler
+            # Future MCP bots will get their own firewall with independent credentials.
+
+    # Access is enforced per resource/route (API Platform `security`, #[IsGranted]).
+    access_control: []

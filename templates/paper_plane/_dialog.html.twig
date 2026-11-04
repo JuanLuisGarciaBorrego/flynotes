@@ -1,0 +1,104 @@
+{# An open plane: a modal with no URL of its own, shared by the home and "My planes" (driven by assets/js/plane-modal.js). Desktop = two columns; mobile (<640px) = bottom sheet. #}
+{% set close_icon %}<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>{% endset %}
+<dialog id="plane-dialog" aria-labelledby="plane-message" class="plane-dialog m-auto w-[calc(100%-3.5rem)] max-w-[1040px] overflow-visible border-0 bg-transparent p-0 text-ink max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:m-0 max-sm:max-h-[calc(100dvh-3.5rem)] max-sm:w-full max-sm:max-w-full max-sm:overflow-hidden max-sm:rounded-t-[20px] max-sm:bg-sky-bg">
+    <button type="button" data-plane-close aria-label="Close and go back to the sky" class="btn absolute -right-5 -top-5 z-10 hidden h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink shadow-[0_8px_20px_-10px_rgb(20_33_61/.5)] sm:flex">{{ close_icon|raw }}</button>
+
+    <div class="flex shrink-0 flex-col items-center px-3 pt-2 sm:hidden">
+        <span class="h-[5px] w-10 rounded-full bg-[#A9B8C9]" aria-hidden="true"></span>
+        <div class="flex items-center justify-between gap-2 self-stretch pl-2 pr-1 pt-1">
+            <span class="font-display text-[17px] font-bold">A plane found you</span>
+            <button type="button" data-plane-close aria-label="Close and go back to the sky" class="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-ink">{{ close_icon|raw }}</button>
+        </div>
+    </div>
+
+    <div id="plane-loading" class="rounded-md border border-line-soft bg-white p-8 text-center shadow-paper max-sm:m-4" role="status">
+        <div class="relative mx-auto h-[70px] w-[160px]" aria-hidden="true">
+            <svg viewBox="0 0 160 70" class="absolute inset-0" fill="none"><path d="M35 35 C35 8, 65 8, 80 35 S125 62, 125 35 S95 8, 80 35 S35 62, 35 35 Z" stroke="#8FA3BA" stroke-width="1.5" stroke-dasharray="4 6" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 160 48" class="loader-plane" fill="none" stroke-linejoin="round"><path d="M2 30 C 30 36, 60 22, 92 26" stroke="#8FA3BA" stroke-width="1.5" stroke-dasharray="4 6" stroke-linecap="round"/><path d="M98 20 L158 4 L118 30 Z" fill="#C2410C" stroke="#14213D" stroke-width="1.6"/><path d="M118 30 L158 4 L126 44 Z" fill="#D3DEE9" stroke="#14213D" stroke-width="1.6"/><path d="M118 30 L121 40 L126 44" stroke="#14213D" stroke-width="1.6"/></svg>
+        </div>
+        <p class="loading-dots mt-3 text-sm font-medium text-ink-soft">Unfolding the plane</p>
+    </div>
+
+    <div id="plane-lost" class="hidden rounded-md border border-line-soft bg-white p-8 text-center shadow-paper max-sm:m-4" role="alert">
+        <p class="m-0 font-display text-xl font-semibold">This plane got lost in the clouds.</p>
+        <button type="button" data-plane-close class="btn mt-5 min-h-11 cursor-pointer rounded-full border-[1.5px] border-ink bg-white px-5 text-[15px] font-semibold text-ink">Back to the sky</button>
+    </div>
+
+    <div id="plane-body" class="plane-body hidden min-h-0 flex-wrap items-start gap-6 overflow-y-auto sm:max-h-[calc(100dvh-4rem)]">
+        <article class="min-w-0 overflow-hidden rounded-[4px] border border-line-soft bg-white shadow-[0_30px_60px_-30px_rgb(10_18_36/.7)] sm:flex-[999_1_540px] max-sm:mx-4 max-sm:mb-5 max-sm:shadow-paper">
+            <div class="airmail-paper h-[5px]" aria-hidden="true"></div>
+            <div class="flex flex-col gap-5 p-5 sm:gap-6 sm:p-[clamp(24px,3.5vw,40px)]">
+                <div class="flex items-center gap-3 sm:gap-3.5">
+                    <span id="plane-author-avatar" class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#EEF3F8] text-[22px] sm:h-12 sm:w-12 sm:text-2xl" aria-hidden="true">
+                        <span id="plane-author-emoji"></span>
+                        <svg id="plane-author-robot" class="hidden size-[22px] sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                    </span>
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                        <span id="plane-author-name" class="break-words text-[15px] font-semibold sm:text-base"></span>
+                        <span id="plane-author-origin" class="text-[13px] text-ink-muted sm:text-sm"></span>
+                    </div>
+                </div>
+
+                <p id="plane-report-badge" hidden class="m-0 -mb-2 self-start rounded-full bg-report-tint px-3 py-1 text-[13px] font-semibold text-ink">Sky Pulse report · Approved by a human</p>
+
+                <p id="plane-message" class="m-0 whitespace-pre-line break-words font-display text-[25px] font-semibold leading-[1.24] tracking-[-0.02em] sm:max-w-[30ch] sm:text-[clamp(24px,2.8vw,34px)] sm:leading-[1.22]"></p>
+
+                {# AI reinterpretation: the accepted version, or a note when the author turned it down (assets/js/plane-modal.js). #}
+                <aside id="plane-ai" class="hidden flex-col gap-1.5 rounded-md bg-[#EEF3F8] px-4 py-3" aria-labelledby="plane-ai-label">
+                    <span id="plane-ai-label" class="text-[13px] font-semibold uppercase tracking-wide text-ink-muted"></span>
+                    <p id="plane-ai-text" class="m-0 whitespace-pre-line break-words text-base leading-normal text-ink-soft"></p>
+                </aside>
+
+                <div class="border-t-[1.5px] border-dashed border-line"></div>
+
+                <section aria-labelledby="plane-stamps-title" class="flex flex-col gap-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 id="plane-stamps-title" class="m-0 font-display text-lg font-bold sm:text-xl">Stamps from its journey</h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="plane-view-count" class="rounded-full bg-[#EEF3F8] px-2.5 py-[3px] text-[13px] font-semibold text-ink-soft sm:px-3 sm:py-1 sm:text-sm"></span>
+                            <span id="plane-stamp-count" class="rounded-full bg-[#EEF3F8] px-2.5 py-[3px] text-[13px] font-semibold text-ink-soft sm:px-3 sm:py-1 sm:text-sm"></span>
+                        </div>
+                    </div>
+                    <div id="plane-stamps" class="relative h-[220px] sm:h-[250px]"></div>
+                </section>
+            </div>
+        </article>
+
+        <aside id="plane-panel" class="flex flex-col gap-3.5 sm:flex-[1_1_280px] max-sm:sticky max-sm:bottom-0 max-sm:border-t max-sm:border-line-soft max-sm:bg-white max-sm:px-4 max-sm:pb-5 max-sm:pt-3.5 max-sm:shadow-[0_-12px_24px_-20px_rgb(20_33_61/.4)]" aria-live="polite">
+            <div class="flex flex-col gap-4 sm:rounded-md sm:border sm:border-line-soft sm:bg-white sm:p-6 sm:shadow-[0_30px_60px_-34px_rgb(10_18_36/.7)] max-sm:gap-2">
+                <div data-stamp-state="can-stamp" class="hidden flex-col gap-4 max-sm:gap-2">
+                    <h2 class="m-0 font-display text-2xl font-bold max-sm:hidden">Leave your mark</h2>
+                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:hidden">Add your stamp so this plane remembers it passed through <span data-viewer-country></span>.</p>
+                    <div class="flex items-center gap-3 sm:flex-col sm:gap-4">
+                        <div data-stamp-preview class="stamp-preview shrink-0 -rotate-6"></div>
+                        <button type="button" data-stamp-button class="btn flex min-h-[52px] grow cursor-pointer items-center justify-center gap-2.5 rounded-full border-0 bg-accent px-5 text-[17px] font-semibold text-white hover:bg-accent-dark disabled:cursor-wait disabled:opacity-70 max-sm:w-auto sm:w-full">
+                            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
+                            <span data-stamp-button-label>Add my stamp</span>
+                        </button>
+                    </div>
+                    <p class="m-0 text-center text-[13px] text-ink-muted max-sm:hidden">You can stamp each plane only once.</p>
+                </div>
+
+                <div data-stamp-state="stamped" class="hidden flex-col gap-4 max-sm:gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[#166534] max-sm:h-7 max-sm:w-7" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                        <h2 class="m-0 font-display text-2xl font-bold max-sm:text-lg">Stamped!</h2>
+                    </div>
+                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-[15px]">Your stamp from <span data-viewer-country></span> is now traveling with this plane. Next stop: another corner of the world.</p>
+                    <button type="button" data-plane-close class="btn flex min-h-[52px] cursor-pointer items-center justify-center rounded-full border-0 bg-ink px-5 text-base font-semibold text-white">Let it fly and head back to the sky</button>
+                </div>
+
+                <div data-stamp-state="anonymous" class="hidden flex-col gap-4 max-sm:gap-2">
+                    <h2 class="m-0 font-display text-2xl font-bold max-sm:text-lg">Where are you reading from?</h2>
+                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-[15px]">Create your identity with a nickname and your country to stamp this plane.</p>
+                    <div data-stamp-preview-guest class="stamp-preview flex justify-center py-1 opacity-55 max-sm:hidden"></div>
+                    <a id="stamp-register" data-base-url="{{ path('app_registration') }}" class="btn flex min-h-[52px] items-center justify-center rounded-full bg-accent px-5 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white">Sign up to stamp</a>
+                    <a id="stamp-login" data-base-url="{{ path('app_recover') }}" class="flex min-h-11 items-center justify-center text-[15px] font-medium">I have a code</a>
+                </div>
+
+                <p id="stamp-error" class="m-0 hidden rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert"></p>
+            </div>
+            <p class="m-0 text-center text-[13px] text-sky-bg max-sm:hidden">This plane has no address: once you close it, it may never cross your path again.</p>
+        </aside>
+    </div>
+</dialog>
