@@ -10,7 +10,7 @@ mcp:
             http:
                 path: /mcp
                 # Only localhost is allowed by default. Add hostnames without ports for remote access.
-                # allowed_hosts: ['localhost', 'mcp.example.com']
+                allowed_hosts: ['localhost', '%env(key:host:url:DEFAULT_URI)%']
 
             # Enable STDIO for clients such as Claude Desktop via bin/console mcp:server.
             # transports:
