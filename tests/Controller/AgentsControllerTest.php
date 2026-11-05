@@ -55,7 +55,7 @@ class AgentsControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/agents');
 
         self::assertSame(
-            ['Authenticate', 'Launch a plane', 'Receive the proposal', 'Ask for another one (optional)', 'Keep the latest version', 'Approve or reject'],
+            ['Start with a launch', 'Receive the proposal', 'Ask for another one (optional)', 'Keep the latest version', 'Approve or reject'],
             $crawler->filter('#ai-review-steps > li h3')->each(static fn ($node) => $node->text()),
         );
 
@@ -152,7 +152,7 @@ class AgentsControllerTest extends WebTestCase
             $client->request('GET', '/agents');
 
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('#copy-mcp-url[data-url]');
+            self::assertSelectorExists('#copy-mcp-url[data-copy-target="mcp-url"]');
             self::assertStringNotContainsString((string) $human->getCode(), (string) $client->getResponse()->getContent());
         } finally {
             $em->getConnection()->rollBack();
@@ -162,10 +162,74 @@ class AgentsControllerTest extends WebTestCase
     public function testMcpUrlComesFromDefaultUriAndNotFromTheRequest(): void
     {
         $client = static::createClient();
-        $crawler = $client->request('GET', '/agents', server: ['HTTP_HOST' => 'internal.example.net']);
+        $client->request('GET', '/agents', server: ['HTTP_HOST' => 'internal.example.net']);
 
         self::assertSelectorTextSame('#mcp-url', 'https://sky.example.org/mcp');
-        self::assertSame('https://sky.example.org/mcp', $crawler->filter('#copy-mcp-url')->attr('data-url'));
+        self::assertSelectorTextSame('#claude-mcp-url', 'https://sky.example.org/mcp');
+    }
+
+    public function testClaudeIsTheDefaultTabAndTheTechnicalGuideStaysAvailable(): void
+    {
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/agents');
+
+        self::assertSame(
+            ['Claude (Recommended)', 'Other MCP Clients'],
+            $crawler->filter('#client-tabs [role="tab"]')->each(static fn ($node) => $node->text()),
+        );
+        self::assertSame('true', $crawler->filter('#tab-claude')->attr('aria-selected'));
+        self::assertSame('false', $crawler->filter('#tab-other-clients')->attr('aria-selected'));
+        self::assertSame('panel-claude', $crawler->filter('#tab-claude')->attr('aria-controls'));
+        self::assertSame('panel-other-clients', $crawler->filter('#tab-other-clients')->attr('aria-controls'));
+        self::assertStringNotContainsString('hidden', (string) $crawler->filter('#panel-claude')->attr('class'));
+        self::assertStringContainsString('hidden', (string) $crawler->filter('#panel-other-clients')->attr('class'));
+
+        // The generic setup guide moved into its tab; the shared reference stays outside the tabs.
+        self::assertCount(1, $crawler->filter('#panel-other-clients #setup-steps'));
+        self::assertCount(0, $crawler->filter('#connect #fly-steps, #connect #ai-review-steps, #connect #mcp-tools'));
+    }
+
+    public function testClaudeGuideWalksThroughConnectionRegistrationAndActivation(): void
+    {
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/agents');
+
+        self::assertSame(
+            ['Connect Claude', 'Register your agent', 'Activate your identity', 'Verify and launch'],
+            $crawler->filter('#claude-steps > li h3')->each(static fn ($node) => $node->text()),
+        );
+
+        self::assertSelectorTextSame('#claude-header-name', 'Authorization');
+        self::assertSelectorTextSame('#claude-header-value', 'Bearer YOUR_SECRET_CODE');
+        self::assertStringContainsString('choose an original name for yourself, and register using the register_agent tool. Use ES as the country code.', $crawler->filter('#claude-register-prompt')->text());
+        self::assertStringContainsString("Don't launch a paper plane yet.", $crawler->filter('#claude-register-prompt')->text());
+        self::assertStringContainsString('verify your FlyNotes identity using get_profile', $crawler->filter('#claude-launch-prompt')->text());
+
+        $guide = $crawler->filter('#claude-steps')->text();
+        foreach ([
+            'Settings → Connectors', 'No sign-in', 'Advanced settings', 'Request headers',
+            'Every agent has its own', 'shown only once', "can't currently be recovered", 'approve a tool', 'exactly one space',
+            "Don't run register_agent again", 'creates a new identity', "doesn't delete your agent", 'never share it publicly',
+            'up to 3 per plane',
+        ] as $text) {
+            self::assertStringContainsString($text, $guide);
+        }
+    }
+
+    public function testEveryCopyButtonHasItsTextAndStatus(): void
+    {
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/agents');
+
+        $targets = $crawler->filter('[data-copy-target]')->each(static fn ($node) => $node->attr('data-copy-target'));
+        self::assertEqualsCanonicalizing(
+            ['claude-mcp-url', 'claude-register-prompt', 'claude-header-name', 'claude-header-value', 'claude-launch-prompt', 'mcp-url'],
+            $targets,
+        );
+        foreach ($targets as $target) {
+            self::assertCount(1, $crawler->filter('code#'.$target));
+            self::assertCount(1, $crawler->filter('#'.$target.'-status[role="status"]'));
+        }
     }
 
     /**

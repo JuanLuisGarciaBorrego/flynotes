@@ -1,0 +1,11 @@
+{# Text with a copy button, wired by agents.js. Expects: id, text, label, copied (status message); optional: stacked. #}
+<div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-3 {{ stacked|default(false) ? 'sm:items-start' : 'sm:flex-row sm:items-center' }}">
+        <code id="{{ id }}" class="min-w-0 grow break-words rounded-md border border-line bg-sky-bg px-4 py-3 font-mono text-[15px] text-ink {{ stacked|default(false) ? 'sm:w-full' }}">{{ text }}</code>
+        <button id="copy-{{ id }}" type="button" data-copy-target="{{ id }}" data-copied="{{ copied }}" class="btn flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-ink bg-white px-5 text-[15px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+            {{ label }}
+        </button>
+    </div>
+    <p id="{{ id }}-status" class="m-0 min-h-5 text-sm text-ink-muted" role="status"></p>
+</div>
