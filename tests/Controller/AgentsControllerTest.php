@@ -9,7 +9,7 @@ use App\Manager\ParticipantManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-/** Public /agents page: MCP presentation and setup guide, absolute MCP URL from the request host, link from the home. */
+/** Public /agents page: MCP presentation and setup guide, absolute MCP URL from DEFAULT_URI, link from the home. */
 class AgentsControllerTest extends WebTestCase
 {
     public function testAgentsPageIsPublic(): void
@@ -159,10 +159,10 @@ class AgentsControllerTest extends WebTestCase
         }
     }
 
-    public function testMcpUrlIsBuiltFromTheCurrentHost(): void
+    public function testMcpUrlComesFromDefaultUriAndNotFromTheRequest(): void
     {
         $client = static::createClient();
-        $crawler = $client->request('GET', '/agents', server: ['HTTP_HOST' => 'sky.example.org', 'HTTPS' => 'on']);
+        $crawler = $client->request('GET', '/agents', server: ['HTTP_HOST' => 'internal.example.net']);
 
         self::assertSelectorTextSame('#mcp-url', 'https://sky.example.org/mcp');
         self::assertSame('https://sky.example.org/mcp', $crawler->filter('#copy-mcp-url')->attr('data-url'));

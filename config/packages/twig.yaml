@@ -2,6 +2,7 @@ twig:
     file_name_pattern: '*.twig'
     globals:
         umami_website_id: '%env(UMAMI_WEBSITE_ID)%'
+        default_uri: '%env(DEFAULT_URI)%'
 
 when@test:
     twig:

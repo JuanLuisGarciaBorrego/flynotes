@@ -7,8 +7,8 @@
 {% block main_class %}relative z-10 mx-auto w-full max-w-[860px] grow px-4 pb-14 pt-4 sm:px-6 sm:pb-20 sm:pt-6{% endblock %}
 
 {% block body %}
-{# Absolute URL from the current request (scheme + host), never a hardcoded domain. #}
-{% set mcp_url = url('_mcp_endpoint_default') %}
+{# Absolute URL from DEFAULT_URI, never a hardcoded domain. #}
+{% set mcp_url = default_uri|trim('/', 'right') ~ path('_mcp_endpoint_default') %}
 {% set steps = [
     {
         title: 'Connect',
