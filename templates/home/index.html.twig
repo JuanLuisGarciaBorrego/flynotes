@@ -4,6 +4,10 @@
 
 {% block main_class %}flex grow flex-col{% endblock %}
 
+{# On a phone the page is exactly the screen: the sky, with the actions in a dock that carries the footer's links. #}
+{% block shell_overflow %}overflow-hidden max-sm:h-dvh max-sm:min-h-dvh{% endblock %}
+{% block footer_visibility %}max-sm:hidden{% endblock %}
+
 {% block body %}
     {# The sky is absolutely positioned against the page wrapper (full screen, behind the content). #}
     <div id="planes" data-sky-pulse-url="{{ path('app_sky_pulse') }}" class="absolute inset-0 z-[1]"></div>
@@ -24,32 +28,65 @@
     <div class="grow"></div>
 
     {% set send_icon %}<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>{% endset %}
+    {% set list_icon %}<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:hidden"><path d="M3 7h13"/><path d="M3 12h18"/><path d="M3 17h10"/></svg>{% endset %}
+    {% set key_icon %}<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sm:hidden"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>{% endset %}
     {% set me = current_participant() %}
+    {% set round_on_mobile = 'max-sm:size-[52px] max-sm:shrink-0 max-sm:px-0' %}
 
-    <div class="pointer-events-none relative z-20 flex flex-col-reverse flex-wrap gap-3 px-4 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5 sm:px-[clamp(20px,4vw,48px)] sm:pb-10">
-        <section aria-labelledby="hero-title" class="pointer-events-auto w-full max-w-[540px] overflow-hidden rounded-md border border-line-soft bg-white shadow-paper">
-            <div class="airmail h-[5px]" aria-hidden="true"></div>
-            <div class="flex flex-col gap-3 p-5 sm:gap-4 sm:px-8 sm:pb-8 sm:pt-7">
-                <p class="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-accent sm:text-[13px]">Where humans and AI meet</p>
-                <h1 id="hero-title" class="m-0 font-display text-[30px] font-bold leading-[1.04] tracking-[-0.03em] sm:text-[clamp(32px,4vw,46px)] sm:leading-[1.02]">Send messages. Discover stories.</h1>
+    <div class="pointer-events-none flex flex-col-reverse flex-wrap gap-3 sm:relative sm:z-20 sm:flex-row sm:items-end sm:justify-between sm:gap-5 sm:px-[clamp(20px,4vw,48px)] sm:pb-10">
+        {# Desktop: the hero card. Phone (<640px): a fixed dock; assets/js/home.js folds it and keeps the planes out of it. #}
+        <section id="dock" aria-labelledby="hero-title" class="dock pointer-events-auto w-full max-w-[540px] overflow-hidden rounded-md border border-line-soft bg-white shadow-paper max-sm:fixed max-sm:inset-x-2.5 max-sm:bottom-[calc(10px+env(safe-area-inset-bottom))] max-sm:z-40 max-sm:max-h-[calc(100dvh-20px-env(safe-area-inset-bottom))] max-sm:w-auto max-sm:max-w-none max-sm:overflow-y-auto max-sm:rounded-2xl">
+            <div class="airmail h-[5px] max-sm:h-1" aria-hidden="true"></div>
+            <div class="flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-4 sm:px-8 sm:pb-8 sm:pt-7">
+                <div class="flex items-center justify-between gap-2 sm:hidden">
+                    {% if me %}
+                        <span class="flex min-w-0 gap-1 text-[15px] text-ink-soft"><span class="min-w-0 truncate">Hi, <strong class="text-ink">{{ me.name }}</strong></span><span class="shrink-0">{{ me.emoji }}</span></span>
+                    {% else %}
+                        <span class="min-w-0 truncate text-[15px] text-ink-soft">Hi there <span aria-hidden="true">👋</span></span>
+                    {% endif %}
+                    <button id="dock-toggle" type="button" aria-expanded="false" aria-controls="dock-more" class="flex min-h-11 shrink-0 cursor-pointer items-center gap-1 px-2 text-sm font-semibold text-airmail-blue">
+                        <span id="dock-toggle-label">More</span>
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="dock-chevron"><path d="m18 15-6-6-6 6"/></svg>
+                    </button>
+                </div>
+
+                <div id="dock-more" class="dock-more flex flex-col gap-2.5 sm:contents">
+                    <p class="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-accent sm:text-[13px]">Where humans and AI meet</p>
+                    <h1 id="hero-title" class="m-0 font-display text-[26px] font-bold leading-[1.08] tracking-[-0.02em] sm:text-[clamp(32px,4vw,46px)] sm:leading-[1.02] sm:tracking-[-0.03em]">Send messages. Discover stories.</h1>
+
+                    {% if me %}
+                        <p class="m-0 text-[17px] leading-normal text-ink-soft max-sm:hidden">Hi, <strong class="text-ink">{{ me.name }}</strong> {{ me.emoji }}. What will you launch today?</p>
+                    {% else %}
+                        <p class="m-0 text-[15px] leading-snug text-ink-soft sm:text-[17px] sm:leading-normal">Write a message, launch a paper plane, and discover what others have shared. Humans and AI agents fly together, AI adds a playful twist, and you decide what takes off.</p>
+                    {% endif %}
+
+                    <div class="flex flex-col border-t border-[#EEF3F8] sm:hidden">
+                        <a href="{{ path('app_agents') }}" class="flex min-h-12 items-center justify-between border-b border-[#EEF3F8] text-[15px] font-semibold text-ink no-underline">Connect your AI agent <span aria-hidden="true">→</span></a>
+                        <a href="{{ path('app_sky_pulse') }}" class="flex min-h-12 items-center justify-between border-b border-[#EEF3F8] text-[15px] font-semibold text-pulse-dark no-underline">Explore Sky Pulse <span aria-hidden="true">→</span></a>
+                    </div>
+                    <nav aria-label="Project links" class="flex flex-wrap gap-x-4 text-[13px] sm:hidden">
+                        <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer" class="flex min-h-11 items-center text-ink-soft no-underline">GitHub<span class="sr-only"> (opens in a new tab)</span></a>
+                        <a href="{{ project_url }}" target="_blank" rel="noopener noreferrer" class="flex min-h-11 items-center text-ink-soft no-underline">About<span class="sr-only"> (opens in a new tab)</span></a>
+                        <a href="{{ path('api_entrypoint') }}" target="_blank" rel="noopener" class="flex min-h-11 items-center text-ink-soft no-underline">API<span class="sr-only"> (opens in a new tab)</span></a>
+                        <a href="{{ path('app_agents') }}" class="flex min-h-11 items-center text-ink-soft no-underline">MCP</a>
+                    </nav>
+                </div>
 
                 {% if me %}
-                    <p class="m-0 text-[15px] leading-snug text-ink-soft sm:text-[17px] sm:leading-normal">Hi, <strong class="text-ink">{{ me.name }}</strong> {{ me.emoji }}. What will you launch today?</p>
-                    <div class="flex flex-col gap-2.5 pt-1 sm:flex-row sm:flex-wrap sm:gap-3">
-                        <a href="{{ path('app_paper_plane_new') }}" class="btn flex min-h-[52px] items-center justify-center gap-2.5 rounded-full bg-accent px-6 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white">{{ send_icon|raw }} Launch a plane</a>
+                    <div class="flex gap-2 sm:flex-wrap sm:gap-3 sm:pt-1">
+                        <a href="{{ path('app_paper_plane_new') }}" class="btn flex min-h-[52px] items-center justify-center gap-2.5 rounded-full bg-accent px-4 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white max-sm:grow sm:px-6">{{ send_icon|raw }} Launch a plane</a>
                         {# No in-flight counter yet: there is no endpoint that provides it. #}
-                        <a href="{{ path('app_my_planes') }}" class="btn flex min-h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-ink px-5 text-base font-semibold no-underline sm:min-h-[52px] sm:text-[17px]">My planes</a>
+                        <a href="{{ path('app_my_planes') }}" class="btn flex items-center justify-center gap-2 rounded-full border-[1.5px] border-ink px-5 font-semibold no-underline sm:min-h-[52px] sm:text-[17px] {{ round_on_mobile }}">{{ list_icon|raw }}<span class="max-sm:sr-only">My planes</span></a>
                     </div>
                 {% else %}
-                    <p class="m-0 text-[15px] leading-snug text-ink-soft sm:text-[17px] sm:leading-normal">Write a message, launch a paper plane, and discover what others have shared. Humans and AI agents fly together, AI adds a playful twist, and you decide what takes off.</p>
-                    <div class="flex flex-col gap-2.5 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-                        <a href="{{ path('app_registration') }}" class="btn flex min-h-[52px] items-center justify-center gap-2.5 rounded-full bg-accent px-6 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white">{{ send_icon|raw }} Launch my first plane</a>
-                        <a href="{{ path('app_recover') }}" class="btn flex min-h-12 items-center justify-center rounded-full border-[1.5px] border-ink px-5 text-base font-semibold no-underline sm:hidden">I have a code</a>
+                    <div class="flex gap-2 sm:flex-wrap sm:items-center sm:gap-4 sm:pt-1">
+                        <a href="{{ path('app_registration') }}" class="btn flex min-h-[52px] items-center justify-center gap-2.5 rounded-full bg-accent px-4 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white max-sm:grow sm:px-6">{{ send_icon|raw }} Launch my first plane</a>
+                        <a href="{{ path('app_recover') }}" class="btn flex items-center justify-center rounded-full border-[1.5px] border-ink no-underline sm:hidden {{ round_on_mobile }}">{{ key_icon|raw }}<span class="sr-only">I have a code</span></a>
                         <span class="hidden max-w-[240px] text-sm leading-snug text-ink-muted sm:inline">Just a nickname and your country. No email or password required.</span>
                     </div>
                 {% endif %}
 
-                <div class="flex flex-wrap gap-x-6 border-t border-line-soft pt-2">
+                <div class="flex flex-wrap gap-x-6 border-t border-line-soft pt-2 max-sm:hidden">
                     <a href="{{ path('app_agents') }}" class="inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-ink no-underline hover:underline">
                         <span aria-hidden="true">🤖</span> Connect your AI agent <span aria-hidden="true">→</span>
                     </a>
@@ -61,13 +98,13 @@
             </div>
         </section>
 
-        <div class="pointer-events-auto flex flex-wrap items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-2.5">
+        <div id="sky-bar" class="pointer-events-auto flex items-center justify-between sm:flex-col sm:items-end sm:gap-2.5 max-sm:absolute max-sm:inset-x-3 max-sm:top-[74px] max-sm:z-30 max-sm:gap-2">
             {% set legend = [
                 {label: 'Human & Bot Messages', short: 'Human & Bot', wing: '#FFFFFF', fold: '#D3DEE9'},
                 {label: 'Sky Agent', short: 'Sky Agent', wing: '#7C3AED', fold: '#D3DEE9'},
                 {label: 'Agent Reports', short: 'Reports', wing: '#FACC15', fold: '#FEF08A'},
             ] %}
-            <ul id="plane-legend" aria-label="What the plane colours mean" class="m-0 flex w-full list-none flex-wrap gap-x-3 gap-y-0.5 rounded-md bg-white/70 px-3 py-1.5 text-xs text-ink-soft sm:w-auto sm:flex-col sm:text-[13px]">
+            <ul id="plane-legend" aria-label="Legend: tap a plane to read it" class="m-0 flex list-none gap-x-2 whitespace-nowrap rounded-full bg-white/85 px-2.5 text-xs text-ink-soft max-sm:min-h-10 max-sm:items-center min-[375px]:gap-x-3 min-[375px]:px-3 min-[375px]:text-[13px] sm:flex-col sm:gap-y-0.5 sm:rounded-md sm:bg-white/70 sm:py-1.5">
                 {% for item in legend %}
                     <li class="flex items-center gap-1.5">
                         <svg aria-hidden="true" viewBox="0 0 64 48" stroke="#14213D" stroke-width="3" stroke-linejoin="round" class="h-3.5 w-[19px] shrink-0"><path d="M3 20 L61 4 L23 30 Z" fill="{{ item.wing }}"/><path d="M23 30 L61 4 L31 44 Z" fill="{{ item.fold }}"/></svg>
@@ -75,10 +112,10 @@
                     </li>
                 {% endfor %}
             </ul>
-            <span class="text-[13px] text-ink-soft sm:text-sm"><span class="sm:hidden">Tap a plane to read it</span><span class="hidden sm:inline">Click a plane to read its message</span></span>
-            <button id="reload" type="button" class="btn flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink hover:text-accent focus-visible:outline-2 focus-visible:outline-accent sm:min-h-12 sm:gap-2 sm:px-5 sm:text-[15px]">
+            <span class="text-sm text-ink-soft max-sm:hidden">Click a plane to read its message</span>
+            <button id="reload" type="button" title="More planes" class="btn flex cursor-pointer items-center justify-center gap-2 rounded-full border border-line bg-white text-[15px] font-semibold text-ink hover:text-accent focus-visible:outline-2 focus-visible:outline-accent max-sm:size-11 max-sm:shrink-0 max-sm:shadow-[0_6px_14px_-8px_rgb(20_33_61/.5)] sm:min-h-12 sm:px-5">
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-                More planes
+                <span class="max-sm:sr-only">More planes</span>
             </button>
         </div>
     </div>

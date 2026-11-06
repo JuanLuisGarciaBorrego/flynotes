@@ -24,7 +24,7 @@ final class RegistrationController extends AbstractController
 
         $options = [];
         foreach ($countries as $code => $name) {
-            $options[] = ['code' => $code, 'name' => $name, 'flag' => self::flag($code)];
+            $options[] = ['code' => $code, 'name' => $name];
         }
 
         $response = $this->render('registration/index.html.twig', ['countries' => $options, 'return_plane' => self::returnPlane($request)]);
@@ -51,11 +51,5 @@ final class RegistrationController extends AbstractController
         $plane = $request->query->getString('plane');
 
         return Uuid::isValid($plane) ? $plane : null;
-    }
-
-    /** Regional indicator symbols, e.g. "ES" => 🇪🇸. */
-    private static function flag(string $code): string
-    {
-        return mb_chr(0x1F1E6 + ord($code[0]) - 65).mb_chr(0x1F1E6 + ord($code[1]) - 65);
     }
 }

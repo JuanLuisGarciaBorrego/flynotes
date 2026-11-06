@@ -112,6 +112,25 @@
     a:hover { color: var(--color-accent); }
 }
 
+/* The home's actions on a phone: a fixed dock, folded by default (assets/js/home.js). The title stays for screen readers. */
+.dock-chevron { transform: rotate(180deg); transition: transform .2s ease; }
+[aria-expanded="true"] > .dock-chevron { transform: none; }
+@media (max-width: 639px) {
+    .dock { box-shadow: 0 -8px 30px -12px rgb(20 33 61 / .35); }
+    .dock .airmail { background-image: repeating-linear-gradient(135deg, #C2410C 0 12px, #fff 12px 18px, #2F5DA8 18px 30px, #fff 30px 36px); }
+    .dock:not([data-expanded]) .dock-more {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+    .dock:not([data-expanded]) .dock-more > :not(h1) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dock-chevron { transition: none; }
+}
+
 /* ---- Open plane (modal) ---------------------------------------------------------------- */
 @keyframes unfold {
     0% { transform: translateY(24px) scale(.6) rotate(-8deg); opacity: 0; }
@@ -142,9 +161,17 @@
     .plane-dialog[open] {
         display: flex;
         flex-direction: column;
+        box-shadow: 0 -20px 40px -20px rgb(10 18 36 / .6);
         animation: sheet-in .4s cubic-bezier(.2, .8, .2, 1) both;
     }
-    .plane-body:not(.hidden) { display: block; }
+    /* The sheet is one column: the plane scrolls, the action bar stays at the foot, even with little to read. */
+    .plane-body:not(.hidden) {
+        flex: 1 1 auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 0;
+    }
 }
 
 .stamp-in { animation: stamp-in .55s cubic-bezier(.2, .8, .2, 1) both; }
@@ -156,24 +183,20 @@
     flex: none;
     width: var(--stamp-size, 100%);
     aspect-ratio: 1;
-    container-type: size;
     font-family: var(--font-stamp);
     color: #fff;
 }
 .stamp > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* The flag sits on the fold, turned 45deg to follow it. Emoji, so it scales with the stamp. */
+/* The flag sits on the fold, turned 45deg to follow it. */
 .stamp-flag {
     position: absolute;
     left: 22.5%;
     top: 59.5%;
     width: 23%;
     height: 14%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-    font-size: 15cqw;
-    line-height: 1;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(20 33 61 / .15), 0 1px 2px rgb(20 33 61 / .2);
     transform: rotate(45deg);
 }
 .stamp-preview { --stamp-size: 56px; }
@@ -182,7 +205,17 @@
     .stamp-preview.flex { align-items: center; }
 }
 
-/* Passport area: stamps are absolutely placed (see assets/js/plane-stamps.js). */
+/*
+ * Passport area: stamps are absolutely placed (assets/js/plane-modal.js). Their z-indexes and transforms stay
+ * inside: a stamp never paints over the action bar. The padding is room for their rotation, and the script reads it.
+ */
+.stamp-zone {
+    position: relative;
+    isolation: isolate;
+    z-index: 0;
+    overflow: clip;
+    padding: 16px;
+}
 .passport-stamp { position: absolute; }
 .passport-ghost {
     position: absolute;
@@ -198,6 +231,9 @@
     font-size: 14px;
     font-weight: 500;
     color: var(--color-ink-soft);
+}
+@media (max-width: 639px) {
+    .passport-ghost { padding: 14px; font-size: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -237,8 +273,85 @@
     transition: transform 1s ease-in;
 }
 @media (prefers-reduced-motion: reduce) {
-    .launch-sheet, .launch-plane { transition: none; }
+    .launch-sheet, .launch-plane, .auth-primary, .auth-chip { transition: none; }
 }
+
+/* Registration and sign-in: the sheet of paper they all sit on, and their controls. */
+.paper-card {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--color-line-soft);
+    border-radius: 8px;
+    box-shadow: 0 28px 56px -34px rgb(20 33 61 / .55);
+}
+.auth-field {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1.5px solid var(--color-line);
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 17px;
+}
+.auth-field:focus-visible,
+.auth-code:focus-visible { outline: 2px solid var(--color-airmail-blue); outline-offset: 2px; }
+.auth-field[aria-invalid="true"] { border-color: #B91C1C; }
+.auth-field[data-filled] { padding-left: 50px; color: var(--color-ink); }
+.auth-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background-color: var(--color-accent);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+.auth-primary:hover { background-color: var(--color-accent-dark); }
+.auth-primary:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.auth-primary:disabled { background-color: #E7B9A5; cursor: not-allowed; }
+.auth-primary[aria-busy="true"]:disabled { background-color: var(--color-accent); cursor: wait; opacity: .8; }
+
+/* The recovery code being typed: its border says how it is going. */
+.auth-code {
+    width: 100%;
+    min-height: 60px;
+    padding: 0 8px;
+    border: 2px solid var(--color-line);
+    border-radius: 8px;
+    background-color: #fff;
+    font-family: var(--font-label);
+    font-size: clamp(19px, 4.6vw, 24px);
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-align: center;
+}
+.auth-code[data-complete] { border-color: #16A34A; }
+.auth-code[aria-invalid="true"] { border-color: #B91C1C; }
+
+/* Copy / download of the recovery code. "Copied" inverts the button. */
+.auth-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-width: 1.5px;
+    border-radius: 999px;
+    background-color: #fff;
+    color: var(--color-ink);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.auth-chip:focus-visible { outline: 2px solid var(--color-airmail-blue); outline-offset: 2px; }
+.auth-chip[data-done] { background-color: var(--color-ink); color: #fff; }
 
 /* AI review dialog after launching (templates/paper_plane/new.html.twig). */
 .ai-dialog[open] { animation: unfold .5s cubic-bezier(.2, .8, .2, 1) both; }

@@ -1,6 +1,7 @@
 {# An open plane: a modal with no URL of its own, shared by the home and "My planes" (driven by assets/js/plane-modal.js). Desktop = two columns; mobile (<640px) = bottom sheet. #}
+<script type="application/json" id="flag-urls">{{ flag_urls_json()|raw }}</script>
 {% set close_icon %}<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>{% endset %}
-<dialog id="plane-dialog" aria-labelledby="plane-message" class="plane-dialog m-auto w-[calc(100%-3.5rem)] max-w-[1040px] overflow-visible border-0 bg-transparent p-0 text-ink max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:m-0 max-sm:max-h-[calc(100dvh-3.5rem)] max-sm:w-full max-sm:max-w-full max-sm:overflow-hidden max-sm:rounded-t-[20px] max-sm:bg-sky-bg">
+<dialog id="plane-dialog" aria-labelledby="plane-message" class="plane-dialog m-auto w-[calc(100%-3.5rem)] max-w-[1040px] overflow-visible border-0 bg-transparent p-0 text-ink max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:m-0 max-sm:h-[calc(100dvh-3.5rem)] max-sm:max-h-[calc(100dvh-3.5rem)] max-sm:w-full max-sm:max-w-full max-sm:overflow-hidden max-sm:rounded-t-[20px] max-sm:bg-sky-bg">
     <button type="button" data-plane-close aria-label="Close and go back to the sky" class="btn absolute -right-5 -top-5 z-10 hidden h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink shadow-[0_8px_20px_-10px_rgb(20_33_61/.5)] sm:flex">{{ close_icon|raw }}</button>
 
     <div class="flex shrink-0 flex-col items-center px-3 pt-2 sm:hidden">
@@ -25,7 +26,7 @@
     </div>
 
     <div id="plane-body" class="plane-body hidden min-h-0 flex-wrap items-start gap-6 overflow-y-auto sm:max-h-[calc(100dvh-4rem)]">
-        <article class="min-w-0 overflow-hidden rounded-[4px] border border-line-soft bg-white shadow-[0_30px_60px_-30px_rgb(10_18_36/.7)] sm:flex-[999_1_540px] max-sm:mx-4 max-sm:mb-5 max-sm:shadow-paper">
+        <article class="min-w-0 overflow-hidden rounded-[4px] border border-line-soft bg-white shadow-[0_30px_60px_-30px_rgb(10_18_36/.7)] sm:flex-[999_1_540px] max-sm:mx-4 max-sm:mb-5 max-sm:mt-1 max-sm:shrink-0 max-sm:shadow-paper">
             <div class="airmail-paper h-[5px]" aria-hidden="true"></div>
             <div class="flex flex-col gap-5 p-5 sm:gap-6 sm:p-[clamp(24px,3.5vw,40px)]">
                 <div class="flex items-center gap-3 sm:gap-3.5">
@@ -59,12 +60,12 @@
                             <span id="plane-stamp-count" class="rounded-full bg-[#EEF3F8] px-2.5 py-[3px] text-[13px] font-semibold text-ink-soft sm:px-3 sm:py-1 sm:text-sm"></span>
                         </div>
                     </div>
-                    <div id="plane-stamps" class="relative h-[220px] sm:h-[250px]"></div>
+                    <div id="plane-stamps" class="stamp-zone h-[220px] sm:h-[250px]"></div>
                 </section>
             </div>
         </article>
 
-        <aside id="plane-panel" class="flex flex-col gap-3.5 sm:flex-[1_1_280px] max-sm:sticky max-sm:bottom-0 max-sm:border-t max-sm:border-line-soft max-sm:bg-white max-sm:px-4 max-sm:pb-5 max-sm:pt-3.5 max-sm:shadow-[0_-12px_24px_-20px_rgb(20_33_61/.4)]" aria-live="polite">
+        <aside id="plane-panel" class="flex flex-col gap-3.5 sm:flex-[1_1_280px] max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:mt-auto max-sm:shrink-0 max-sm:border-t max-sm:border-line-soft max-sm:bg-white max-sm:px-4 max-sm:pb-[calc(16px+env(safe-area-inset-bottom))] max-sm:pt-3.5 max-sm:shadow-[0_-12px_24px_-20px_rgb(20_33_61/.4)]" aria-live="polite">
             <div class="flex flex-col gap-4 sm:rounded-md sm:border sm:border-line-soft sm:bg-white sm:p-6 sm:shadow-[0_30px_60px_-34px_rgb(10_18_36/.7)] max-sm:gap-2">
                 <div data-stamp-state="can-stamp" class="hidden flex-col gap-4 max-sm:gap-2">
                     <h2 class="m-0 font-display text-2xl font-bold max-sm:hidden">Leave your mark</h2>
@@ -84,13 +85,13 @@
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[#166534] max-sm:h-7 max-sm:w-7" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
                         <h2 class="m-0 font-display text-2xl font-bold max-sm:text-lg">Stamped!</h2>
                     </div>
-                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-[15px]">Your stamp from <span data-viewer-country></span> is now traveling with this plane. Next stop: another corner of the world.</p>
-                    <button type="button" data-plane-close class="btn flex min-h-[52px] cursor-pointer items-center justify-center rounded-full border-0 bg-ink px-5 text-base font-semibold text-white">Let it fly and head back to the sky</button>
+                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-[15px]">Your stamp from <span data-viewer-country></span> is now traveling with this plane.<span class="max-sm:hidden"> Next stop: another corner of the world.</span></p>
+                    <button type="button" data-plane-close class="btn flex min-h-[52px] cursor-pointer items-center justify-center rounded-full border-0 bg-ink px-5 text-base font-semibold text-white max-sm:min-h-12 max-sm:border-[1.5px] max-sm:border-ink max-sm:bg-white max-sm:text-ink">Let it fly and head back to the sky</button>
                 </div>
 
                 <div data-stamp-state="anonymous" class="hidden flex-col gap-4 max-sm:gap-2">
-                    <h2 class="m-0 font-display text-2xl font-bold max-sm:text-lg">Where are you reading from?</h2>
-                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-[15px]">Create your identity with a nickname and your country to stamp this plane.</p>
+                    <h2 class="m-0 font-display text-2xl font-bold max-sm:hidden">Where are you reading from?</h2>
+                    <p class="m-0 text-base leading-normal text-ink-soft max-sm:text-center max-sm:text-sm">Create your identity<span class="max-sm:hidden"> with a nickname and your country</span> to stamp this plane.</p>
                     <div data-stamp-preview-guest class="stamp-preview flex justify-center py-1 opacity-55 max-sm:hidden"></div>
                     <a id="stamp-register" data-base-url="{{ path('app_registration') }}" class="btn flex min-h-[52px] items-center justify-center rounded-full bg-accent px-5 text-[17px] font-semibold text-white no-underline hover:bg-accent-dark hover:text-white">Sign up to stamp</a>
                     <a id="stamp-login" data-base-url="{{ path('app_recover') }}" class="flex min-h-11 items-center justify-center text-[15px] font-medium">I have a code</a>

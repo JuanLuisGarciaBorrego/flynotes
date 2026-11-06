@@ -2,91 +2,94 @@
 
 {% block title %}Create your identity · FlyNotes{% endblock %}
 
+{% block stylesheets %}<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">{% endblock %}
+
+{% block clouds %}{% endblock %}
+
+{% block header_actions %}
+    {% if me %}
+        {{ parent() }}
+    {% else %}
+        <a href="{{ path('app_recover', return_plane ? {plane: return_plane} : {}) }}" class="btn flex min-h-11 items-center rounded-full border border-line bg-white/70 px-4 text-[15px] font-semibold text-ink no-underline hover:text-ink">I have a code</a>
+    {% endif %}
+{% endblock %}
+
+{% block main_class %}relative z-10 w-full grow px-[clamp(14px,4vw,32px)] pb-10 pt-2{% endblock %}
+
 {% block body %}
-{% set plane %}<svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3Z"/><path d="m10 13 11-10"/></svg>{% endset %}
-<div id="registration" class="mx-auto -mt-4 w-full max-w-md sm:mt-0">
-    <div class="rounded-3xl border border-amber-100 bg-gradient-to-b from-white to-amber-50/60 p-6 shadow-sm sm:p-8">
-        <header id="registration-header" class="text-center">
-            <p class="inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-sky-700">
-                {{ plane|raw }} FlyNotes
-            </p>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight">Create your identity</h1>
-            <p class="mt-2 text-stone-600">Pick a nickname and start sending messages around the world.</p>
-        </header>
+<script type="application/json" id="flag-urls">{{ flag_urls_json()|raw }}</script>
 
-        <form id="registration-form" class="mt-8 space-y-5" novalidate>
-            <p id="form-error" class="hidden rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert"></p>
+<div id="registration" class="mx-auto flex w-full max-w-[900px] flex-col gap-[22px]">
+    <header class="flex flex-col gap-1.5 text-center">
+        <p class="m-0 text-[13px] font-semibold uppercase tracking-[0.12em] text-accent">Your boarding pass</p>
+        <h1 class="m-0 font-display text-[clamp(28px,4.4vw,42px)] font-bold leading-[1.05] tracking-[-0.03em]">Create your identity</h1>
+        <p class="m-0 text-base text-ink-soft">No email, no password. Just a nickname and where you're writing from.</p>
+    </header>
 
-            <div>
-                <label for="name" class="block text-sm font-medium text-stone-700">Nickname</label>
-                <input id="name" name="name" type="text" required maxlength="255" autocomplete="nickname"
-                       aria-describedby="name-error"
-                       class="mt-1 block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 aria-[invalid=true]:border-rose-500">
-                <p id="name-error" class="mt-1 hidden text-sm text-rose-700"></p>
-            </div>
+    <div class="paper-card">
+        <div class="airmail-paper h-[5px]" aria-hidden="true"></div>
+        <div class="flex flex-wrap">
+            <form id="registration-form" class="flex min-w-0 flex-[999_1_320px] flex-col gap-[18px] p-[clamp(20px,3.5vw,32px)] max-sm:basis-full" novalidate>
+                <p id="form-error" class="m-0 hidden rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert"></p>
 
-            <div>
-                <label for="countryCode" class="block text-sm font-medium text-stone-700">Country</label>
-                <select id="countryCode" name="countryCode" required aria-describedby="countryCode-error"
-                        class="mt-1 block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 aria-[invalid=true]:border-rose-500">
-                    <option value="" selected disabled>Select your country</option>
-                    {% for country in countries %}
-                        <option value="{{ country.code }}" data-name="{{ country.name }}" data-flag="{{ country.flag }}">{{ country.flag }} {{ country.name }}</option>
-                    {% endfor %}
-                </select>
-                <p id="countryCode-error" class="mt-1 hidden text-sm text-rose-700"></p>
-            </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="name" class="text-[15px] font-semibold">Nickname</label>
+                    <input id="name" name="name" type="text" required maxlength="30" autocomplete="off" placeholder="e.g. Wind traveller"
+                           aria-describedby="name-help name-error" class="auth-field">
+                    <p id="name-help" class="m-0 text-[13px] text-ink-muted">Shown on your planes. 2–30 characters.</p>
+                    <p id="name-error" class="m-0 hidden text-sm text-[#B91C1C]" role="alert"></p>
+                </div>
 
-            <p class="text-sm text-stone-500">🎲 We'll pick a random emoji for you.</p>
+                <div class="flex flex-col gap-1.5">
+                    <label for="countryCode" class="text-[15px] font-semibold">Country</label>
+                    <div class="relative">
+                        <img id="country-flag" src="" alt="" hidden class="pointer-events-none absolute left-3.5 top-1/2 -mt-[9px] h-[18px] w-6 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(20_33_61/.15)]">
+                        <select id="countryCode" name="countryCode" required aria-describedby="countryCode-help countryCode-error" class="auth-field text-ink-muted">
+                            <option value="" selected>Select your country</option>
+                            {% for country in countries %}
+                                <option value="{{ country.code }}">{{ country.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p id="countryCode-help" class="m-0 text-[13px] text-ink-muted">Only the country travels with your planes, never your location.</p>
+                    <p id="countryCode-error" class="m-0 hidden text-sm text-[#B91C1C]" role="alert"></p>
+                </div>
 
-            <button id="submit" type="submit"
-                    class="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-3 font-medium text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-sky-400">
-                <svg id="spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-                <span id="submit-label">Create my identity</span>
-            </button>
-        </form>
+                <p class="m-0 flex items-center gap-2.5 rounded-lg bg-[#F4F7FA] px-3.5 py-3 text-sm leading-[1.4] text-ink-soft">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="18" height="18" x="3" y="3" rx="3"/><circle cx="8.5" cy="8.5" r="1"/><circle cx="15.5" cy="15.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/><circle cx="8.5" cy="15.5" r="1"/></svg>
+                    We'll pick a random emoji for you, and give you a secret code to come back.
+                </p>
 
-        <section id="registration-done" class="mt-2 hidden text-center" aria-live="polite">
-            <p id="done-emoji" class="text-6xl" aria-hidden="true"></p>
-            <h2 class="mt-4 text-2xl font-bold tracking-tight">Your identity is ready!</h2>
-            <p class="mt-2 text-lg"><span id="done-name" class="font-semibold"></span></p>
-            <p id="done-country" class="text-stone-600"></p>
+                <button id="submit" type="submit" disabled class="auth-primary">
+                    <svg id="spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                    <span id="submit-label">Create my identity</span>
+                </button>
+            </form>
 
-            <p class="mt-6 text-sm font-medium text-stone-700">Your personal code</p>
-            <p id="done-code" class="mt-1 select-all break-all rounded-2xl border border-dashed border-amber-300 bg-white px-4 py-4 font-mono text-xl font-semibold tracking-widest text-stone-900 sm:text-2xl"></p>
-
-            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-                <button id="copy" type="button" class="flex-1 rounded-full border border-sky-600 px-5 py-3 font-medium text-sky-700 transition hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">Copy code</button>
-                <button id="download" type="button" class="flex-1 rounded-full border border-sky-600 px-5 py-3 font-medium text-sky-700 transition hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">Download code</button>
-            </div>
-            <p id="copy-status" class="mt-2 min-h-5 text-sm text-stone-600" role="status"></p>
-
-            <div class="mt-4 rounded-2xl bg-amber-50 p-4 text-left text-sm text-amber-900">
-                <p class="font-semibold">Save this code now</p>
-                <p class="mt-1">It's the only way to recover your identity from another browser or device. Anyone who has it can pretend to be you, so keep it to yourself. If you leave this screen without saving it, we can't promise you'll see it again.</p>
-                <p class="mt-2">The downloaded file holds a private credential: keep it somewhere safe.</p>
-            </div>
-
-            <div class="mt-8 border-t border-amber-100 pt-6">
-                {% if return_plane %}
-                    <a href="{{ path('app_home', {plane: return_plane}) }}" class="mb-6 flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-4 text-lg font-bold text-white shadow-md transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-300 focus:ring-offset-2">
-                        Back to the plane to add my stamp
-                    </a>
-                {% endif %}
-                <p class="text-lg font-semibold">You're ready to fly ✈️</p>
-                <p class="mt-1 text-sm text-stone-600">Write your first message and let it travel to someone anywhere in the world.</p>
-                <a href="{{ path('app_paper_plane_new') }}" class="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-4 text-lg font-bold text-white shadow-md transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-300 focus:ring-offset-2">
-                    Write your first message
-                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                </a>
-                <p class="mt-2 text-xs text-stone-500">Saved your code? Then you're good to go.</p>
-            </div>
-        </section>
+            {# The ticket's stub. Everything in it is filled in on the client while typing (assets/js/registration.js). #}
+            <aside aria-label="Preview" class="flex flex-[1_1_260px] flex-col items-center justify-center gap-3.5 border-dashed border-line-soft bg-[#F8FAFC] p-[clamp(20px,3.5vw,32px)] text-center max-sm:basis-full max-sm:border-t-2 sm:border-l-2">
+                <span class="font-label text-[11px] font-bold tracking-[0.12em] text-ink-muted">THIS IS HOW YOU'LL FLY</span>
+                <div class="flex max-w-full items-center gap-3">
+                    <span aria-hidden="true" class="flex size-[52px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#F3C9B3] bg-accent-tint font-display text-[22px] font-extrabold text-accent">?</span>
+                    <span class="flex min-w-0 flex-col items-start gap-0.5">
+                        <strong id="preview-name" class="max-w-full break-words text-left text-lg text-[#94A3B8]">Your nickname</strong>
+                        <span class="flex items-center gap-1.5 text-left text-sm text-ink-muted">
+                            <img id="preview-flag" src="" alt="" hidden class="h-[13px] w-[18px] rounded-[2px] object-cover">
+                            <span id="preview-country">Your country</span>
+                        </span>
+                    </span>
+                </div>
+                <div id="preview-stamp" class="-rotate-6"></div>
+                <span class="max-w-[220px] text-[13px] leading-[1.4] text-ink-muted">Your stamp. You'll leave it on every plane you read.</span>
+            </aside>
+        </div>
     </div>
 
-    <p id="recovery-link" class="mt-6 text-center text-sm text-stone-500">
-        Already have a code?
-        <a href="{{ path('app_recover', return_plane ? {plane: return_plane} : {}) }}" class="font-medium text-sky-700 underline hover:text-sky-800">Recover your identity</a>
+    <p id="recovery-link" class="m-0 text-center text-[15px] text-ink-soft">
+        Already flying?
+        <a href="{{ path('app_recover', return_plane ? {plane: return_plane} : {}) }}" class="font-semibold">Sign in with your code</a>
     </p>
 </div>
+
+{{ include('registration/_identity_created.html.twig') }}
 {% endblock %}

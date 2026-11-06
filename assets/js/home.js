@@ -19,6 +19,9 @@ function showSentToast() {
 
 const rand = (min, max) => min + Math.random() * (max - min);
 const SVG_NS = 'http://www.w3.org/2000/svg';
+// On a phone planes fly between the sky's top bar and the dock, with this much air around them.
+const MOBILE_FLIGHT_MARGIN = 24;
+const MOBILE_MIN_BAND = 80;
 
 function svgEl(name, attrs) {
     const el = document.createElementNS(SVG_NS, name);
@@ -51,10 +54,8 @@ function skyPulsePlane(url) {
 }
 
 /** Closed smooth loop through 5 random points (Catmull-Rom converted to cubic Béziers). */
-function randomLoop(width, height, mobile) {
+function randomLoop(width, { minY, maxY }, mobile) {
     const padX = mobile ? 30 : 60;
-    const minY = mobile ? 80 : 90;
-    const maxY = Math.max(minY + 80, mobile ? Math.min(440, height - 50) : height - 50);
     const pts = Array.from({ length: 5 }, () => [
         Math.round(padX + rand(0, Math.max(80, width - padX * 2))),
         Math.round(rand(minY, maxY)),
@@ -86,17 +87,30 @@ export function initHome() {
 
     const openPlane = initPlaneDialog(dialog);
 
+    /** Vertical band the planes fly in, in the sky's coordinates. */
+    function flightBand(mobile) {
+        if (!mobile) {
+            const minY = 90;
+            return { minY, maxY: Math.max(minY + 80, sky.clientHeight - 50) };
+        }
+        const skyTop = sky.getBoundingClientRect().top;
+        const minY = Math.round(document.querySelector('#sky-bar').getBoundingClientRect().bottom - skyTop + MOBILE_FLIGHT_MARGIN);
+        const dockTop = document.querySelector('#dock').getBoundingClientRect().top - skyTop;
+        return { minY, maxY: Math.max(minY + MOBILE_MIN_BAND, Math.round(dockTop - MOBILE_FLIGHT_MARGIN)) };
+    }
+
     /** Sets path, size, opacity, z-index and timing of every plane from the current sky size. */
     function layout() {
-        const { clientWidth: width, clientHeight: height } = sky;
+        const width = sky.clientWidth;
         const mobile = window.matchMedia(MOBILE_QUERY).matches;
+        const band = flightBand(mobile);
         for (const { el, depth } of planes) {
             const size = mobile ? 38 + depth * 82 : 52 + depth * 128;
             const duration = (mobile ? 40 - depth * 16 : 70 - depth * 30) * rand(0.8, 1.2);
             el.style.width = `${Math.round(size)}px`;
             el.style.opacity = String(Math.round((0.32 + depth * 0.68) * 100) / 100);
             el.style.zIndex = String(Math.round(depth * 10));
-            el.style.offsetPath = `path('${randomLoop(width, height, mobile)}')`;
+            el.style.offsetPath = `path('${randomLoop(width, band, mobile)}')`;
             el.style.animationDuration = `${duration.toFixed(1)}s`;
             el.style.animationDelay = `${(-rand(0, duration)).toFixed(1)}s`;
         }
@@ -135,6 +149,15 @@ export function initHome() {
     window.addEventListener('resize', () => {
         window.clearTimeout(resizeTimer);
         resizeTimer = window.setTimeout(layout, RESIZE_DEBOUNCE_MS);
+    });
+
+    const dock = document.querySelector('#dock');
+    const dockToggle = document.querySelector('#dock-toggle');
+    dockToggle.addEventListener('click', () => {
+        const expanded = dock.toggleAttribute('data-expanded');
+        dockToggle.setAttribute('aria-expanded', String(expanded));
+        document.querySelector('#dock-toggle-label').textContent = expanded ? 'Less' : 'More';
+        layout(); // the dock has just changed height, and the planes fly above it
     });
 
     document.querySelector('#reload').addEventListener('click', loadSky);

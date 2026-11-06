@@ -260,10 +260,12 @@ class AgentsControllerTest extends WebTestCase
         $client = static::createClient();
         $crawler = $client->request('GET', '/');
 
-        $link = $crawler->selectLink('Connect your AI agent');
-        self::assertCount(1, $link);
+        // Once in the card on a desktop and once in the unfolded dock on a phone: only one of them is ever displayed.
+        $links = $crawler->selectLink('Connect your AI agent');
+        self::assertCount(2, $links);
+        self::assertSame(['/agents', '/agents'], $links->each(static fn ($link): ?string => $link->attr('href')));
 
-        $client->click($link->link());
+        $client->click($links->first()->link());
         self::assertResponseIsSuccessful();
         self::assertRouteSame('app_agents');
     }

@@ -5,6 +5,7 @@ import { publicAiView } from './ai-message.js';
 // The real colour comes from the stamp's uuid, which only exists once it is stamped: the preview uses the accent.
 const PREVIEW_COLOR = '#C2410C';
 const MOBILE_QUERY = '(max-width: 639px)';
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 // Modal loader: only shown if the answer takes a noticeable time, and then never shorter than the minimum.
 const LOADER_DELAY_MS = 200;
 const LOADER_MIN_MS = 600;
@@ -45,19 +46,21 @@ function paintStamps(zone, stamps, { showGhost }) {
     const mineSize = mobile ? 110 : 140;
     const baseHeight = mobile ? 220 : 250;
     const cols = mobile ? 3 : 4;
-    const width = zone.clientWidth || 320;
+    const padding = parseFloat(getComputedStyle(zone).paddingLeft) || 0; // absolute children ignore it: room for their rotation
+    const width = (zone.clientWidth || 320) - padding * 2;
     const rowStep = Math.round(size * 0.82);
     const others = stamps.filter((stamp) => !stamp.mine);
     const mine = stamps.find((stamp) => stamp.mine);
     const nodes = [];
+    let freshStamp = null;
 
     others.forEach((stamp, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
         const node = document.createElement('div');
         node.className = 'passport-stamp';
-        node.style.left = `${Math.round(col * ((width - size) / (cols - 1)) + spread(stamp.uuid, 'x', -6, 6))}px`;
-        node.style.top = `${Math.round(row * rowStep + (col % 2) * 22 + spread(stamp.uuid, 'y', 0, 14))}px`;
+        node.style.left = `${Math.round(padding + col * ((width - size) / (cols - 1)) + spread(stamp.uuid, 'x', -6, 6))}px`;
+        node.style.top = `${Math.round(padding + row * rowStep + (col % 2) * 22 + spread(stamp.uuid, 'y', 0, 14))}px`;
         node.style.transform = `rotate(${spread(stamp.uuid, 'r', -14, 14).toFixed(1)}deg)`;
         node.style.zIndex = '1';
         node.append(createStamp({ color: stamp.color, countryCode: stamp.countryCode, size }));
@@ -72,6 +75,9 @@ function paintStamps(zone, stamps, { showGhost }) {
         node.style.cssText = `left:${left};top:${top}px;transform:rotate(-7deg);z-index:5`;
         const inner = document.createElement('div');
         inner.className = mine.fresh ? 'stamp-in' : '';
+        if (mine.fresh) {
+            freshStamp = inner;
+        }
         mine.fresh = false; // the stamp-in animation plays once; later repaints (resize) must not replay it
         inner.append(createStamp({ color: mine.color, countryCode: mine.countryCode, size: mineSize }));
         node.append(inner);
@@ -85,8 +91,21 @@ function paintStamps(zone, stamps, { showGhost }) {
     }
 
     const rows = Math.ceil(others.length / cols);
-    zone.style.height = `${Math.max(baseHeight, rows * rowStep + size + 24)}px`;
+    zone.style.height = `${Math.max(baseHeight, rows * rowStep + size + 24 + padding * 2)}px`;
     zone.replaceChildren(...nodes);
+
+    if (freshStamp !== null && mobile) {
+        revealAfterLanding(freshStamp);
+    }
+}
+
+/** On the sheet, once the stamp has landed, brings it into view above the action bar. */
+function revealAfterLanding(stamp) {
+    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
+        stamp.scrollIntoView({ block: 'center' }); // no animation: nothing to wait for
+        return;
+    }
+    stamp.addEventListener('animationend', () => stamp.scrollIntoView({ block: 'center', behavior: 'smooth' }), { once: true });
 }
 
 /**
@@ -268,7 +287,7 @@ export function initPlaneDialog(dialog) {
         }
         const id = ++requestId;
         opener = trigger;
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
         body.classList.add('hidden');
         lost.classList.add('hidden');

@@ -20,6 +20,18 @@ export function flagEmoji(code) {
     return [...code.toUpperCase()].map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('');
 }
 
+let flagUrls = null;
+
+/** Public URL of a country's SVG flag, from the map the page carries (asset URLs have a digest). Null if there is none. */
+export function flagUrl(code) {
+    if (flagUrls === null) {
+        const map = document.querySelector('#flag-urls');
+        flagUrls = map ? JSON.parse(map.textContent) : {};
+    }
+
+    return typeof code === 'string' ? flagUrls[code.toUpperCase()] ?? null : null;
+}
+
 const regionNames = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'], { type: 'region' }) : null;
 
 /** English country name for an ISO code, or the code itself if unknown. */
@@ -41,7 +53,7 @@ export function countryName(code) {
  */
 export function createStamp({ color, countryCode = null, size = null }) {
     const gradientId = `stamp-flap-${++gradientCount}`;
-    const flag = flagEmoji(countryCode);
+    const flag = flagUrl(countryCode);
     const name = countryName(countryCode);
 
     const root = document.createElement('div');
@@ -83,10 +95,10 @@ export function createStamp({ color, countryCode = null, size = null }) {
     root.append(svg);
 
     if (flag !== null) {
-        const flagNode = document.createElement('span');
+        const flagNode = document.createElement('img');
         flagNode.className = 'stamp-flag';
-        flagNode.setAttribute('aria-hidden', 'true'); // the stamp's aria-label already names the country
-        flagNode.textContent = flag;
+        flagNode.src = flag;
+        flagNode.alt = ''; // the stamp's aria-label already names the country
         root.append(flagNode);
     }
 

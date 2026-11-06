@@ -224,7 +224,7 @@ class IdentityRecoveryTest extends WebTestCase
         $this->client->request('GET', '/recover');
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#recovery-form input[name="code"]');
-        self::assertSelectorTextContains('#recovery-form button', 'Recover my identity');
+        self::assertSelectorTextContains('#recovery-form button', 'Sign in');
         self::assertSelectorExists('a[href="/register"]');
         self::assertStringContainsString('no-store', $this->client->getResponse()->headers->get('Cache-Control'));
 
