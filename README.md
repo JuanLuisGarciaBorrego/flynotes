@@ -57,8 +57,8 @@ The command runs, in order:
 
 1. Checks that `.env.local` exists.
 2. Builds the PHP image.
-3. Starts FrankenPHP and PostgreSQL **and waits for healthy services**.
-4. Runs `composer install` using the lockfile.
+3. Runs `composer install` using the lockfile, in a one-off container (the FrankenPHP worker can't start without `vendor/`).
+4. Starts FrankenPHP and PostgreSQL **and waits for healthy services**.
 5. Creates the database if needed.
 6. Applies the Doctrine migrations.
 7. Builds the Tailwind CSS assets.
@@ -80,7 +80,7 @@ Open **[http://localhost:8000](http://localhost:8000)**.
 | `make migrate` | Run pending Doctrine migrations |
 | `make database` | Create the database if it is missing |
 | `make console CMD="about"` | Run Symfony Console commands |
-| `make test` | Run PHPUnit (requires an initialized test database) |
+| `make test` | Prepare the test database and run PHPUnit |
 | `make cs-check` | Check PHP formatting |
 
 ### AI availability

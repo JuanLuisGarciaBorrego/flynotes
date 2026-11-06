@@ -1,10 +1,10 @@
 # Single Compose project for this repo. Do not override it with `-p` or COMPOSE_PROJECT_NAME:
 # the fixed container names below make a second stack fail to start instead of sharing data.
-name: paper-planes
+name: flynotes
 
 services:
   php:
-    container_name: paper-planes-php
+    container_name: flynotes-php
     build:
       context: ./docker/php
     command: ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
@@ -20,7 +20,7 @@ services:
         condition: service_healthy
 
   database:
-    container_name: paper-planes-database
+    container_name: flynotes-database
     image: postgres:17-alpine
     ports:
       - "127.0.0.1:5432:5432"
@@ -35,7 +35,7 @@ services:
       retries: 10
       start_period: 10s
     volumes:
-      # Named volume owned by this project (paper-planes_database_data); never a bind mount
+      # Named volume owned by this project (flynotes_database_data); never a bind mount
       # that another stack could also mount.
       - database_data:/var/lib/postgresql/data
 

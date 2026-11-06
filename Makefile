@@ -7,12 +7,12 @@ CONSOLE := $(PHP) php bin/console
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install check-env build start stop down restart logs php console composer dependencies database migration migrate assets test cs-check cs-fix
+.PHONY: help install check-env build start stop down restart logs php console composer dependencies database migration migrate assets test-database test cs-check cs-fix
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*?## "}; /^[a-zA-Z0-9_-]+:.*?## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install: check-env build start dependencies database migrate assets ## Set up FlyNotes from a clean clone
+install: check-env build dependencies start database migrate assets ## Set up FlyNotes from a clean clone
 	@printf '\nFlyNotes is ready: http://localhost:8000\n'
 
 check-env: ## Check that local configuration exists
@@ -46,7 +46,7 @@ composer: ## Run Composer: make composer CMD="install"
 	$(PHP) composer $(CMD)
 
 dependencies: ## Install PHP dependencies from composer.lock
-	$(DC) exec -T $(PHP_SERVICE) composer install --no-interaction --prefer-dist
+	$(DC) run --rm --no-deps -T $(PHP_SERVICE) composer install --no-interaction --prefer-dist
 
 database: ## Create the database if it does not exist
 	$(CONSOLE) doctrine:database:create --if-not-exists
@@ -60,7 +60,11 @@ migrate: ## Apply Doctrine migrations
 assets: ## Build Tailwind CSS for the local frontend
 	$(CONSOLE) tailwind:build
 
-test: ## Run PHPUnit in the test environment (test database must be initialized)
+test-database: ## Create and migrate the test database
+	$(DC) exec -T -e APP_ENV=test $(PHP_SERVICE) php bin/console doctrine:database:create --if-not-exists
+	$(DC) exec -T -e APP_ENV=test $(PHP_SERVICE) php bin/console doctrine:migrations:migrate --no-interaction
+
+test: test-database ## Run PHPUnit in the test environment
 	$(DC) exec -e APP_ENV=test $(PHP_SERVICE) php vendor/bin/phpunit
 
 cs-check: ## Check PHP code style
